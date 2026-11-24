@@ -1,0 +1,902 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isVerifiedOwner(userId) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && isValidId(userId)
+        && request.auth.uid == userId;
+    }
+
+    function isValidLocale(val) {
+      return val in ['en', 'ar', 'ckb'];
+    }
+
+    function isValidTheme(val) {
+      return val in ['light', 'dark', 'amoled'];
+    }
+
+    function isValidCurrency(val) {
+      return val in ['IQD', 'USD', 'EUR'];
+    }
+
+    function isValidDateYMD(val) {
+      return val is string && val.size() == 10 && val.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidMonthKey(val) {
+      return val is string && val.size() == 7 && val.matches('^\\d{4}-\\d{2}$');
+    }
+
+    function isValidTimeHHMM(val) {
+      return val is string && val.size() == 5 && val.matches('^([01]\\d|2[0-3]):[0-5]\\d$');
+    }
+
+    function isValidIsoTimestamp(val) {
+      return val is string && val.size() >= 20 && val.size() <= 30
+        && val.matches('^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$');
+    }
+
+    function isValidSortKey(val) {
+      return val is string && val.size() >= 1 && val.size() <= 64 && val.matches('^[0-9A-Za-z]+$');
+    }
+
+    function isValidTagList(tags) {
+      return tags is list
+        && tags.size() <= 10
+        && (tags.size() == 0 || (tags[0] is string && tags[0].size() >= 1 && tags[0].size() <= 40));
+    }
+
+    function isValidDayKeyList(days) {
+      return days is list
+        && days.size() <= 31
+        && (days.size() == 0 || isValidDateYMD(days[0]));
+    }
+
+    function isValidSubtaskList(subtasks) {
+      return subtasks is list
+        && subtasks.size() <= 20
+        && (
+          subtasks.size() == 0
+          || (
+            subtasks[0] is map
+            && subtasks[0].keys().hasAll(['id', 'title', 'done'])
+            && subtasks[0].keys().hasOnly(['id', 'title', 'done'])
+            && isValidId(subtasks[0].id)
+            && subtasks[0].title is string && subtasks[0].title.size() >= 1 && subtasks[0].title.size() <= 200
+            && subtasks[0].done is bool
+          )
+        );
+    }
+
+    function isValidAiModuleToggles(m) {
+      return m is map
+        && m.keys().hasOnly(['debts', 'reminders', 'planner', 'notes', 'vault', 'habits', 'finance', 'assistant'])
+        && (!('debts' in m) || m.debts is bool)
+        && (!('reminders' in m) || m.reminders is bool)
+        && (!('planner' in m) || m.planner is bool)
+        && (!('notes' in m) || m.notes is bool)
+        && (!('vault' in m) || m.vault is bool)
+        && (!('habits' in m) || m.habits is bool)
+        && (!('finance' in m) || m.finance is bool)
+        && (!('assistant' in m) || m.assistant is bool);
+    }
+
+    function isValidExpenseCategory(val) {
+      return val in [
+        'housing', 'food', 'transport', 'utilities', 'health',
+        'shopping', 'subscriptions', 'education', 'entertainment',
+        'debt_payment', 'savings', 'other'
+      ];
+    }
+
+    function isValidTransactionCategory(val) {
+      return val in ['salary', 'freelance', 'business', 'gift'] || isValidExpenseCategory(val);
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'displayName', 'locale', 'theme',
+          'primaryCurrency', 'secondaryCurrency', 'vaultStorageMode',
+          'aiGlobalEnabled', 'analyticsConsent', 'aiPrivacyNoticeAccepted',
+          'e2eConfigured', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'displayName', 'email', 'locale', 'theme',
+          'primaryCurrency', 'secondaryCurrency', 'vaultStorageMode',
+          'aiGlobalEnabled', 'aiModuleToggles', 'analyticsConsent',
+          'aiPrivacyNoticeAccepted', 'e2eConfigured', 'e2eSalt', 'e2eVerifier',
+          'quietHoursStart', 'quietHoursEnd', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 100
+        && (!('email' in data) || (data.email is string && data.email.size() <= 254))
+        && isValidLocale(data.locale)
+        && isValidTheme(data.theme)
+        && isValidCurrency(data.primaryCurrency)
+        && isValidCurrency(data.secondaryCurrency)
+        && data.vaultStorageMode in ['local_only', 'cloud_private']
+        && data.aiGlobalEnabled is bool
+        && (!('aiModuleToggles' in data) || isValidAiModuleToggles(data.aiModuleToggles))
+        && data.analyticsConsent is bool
+        && data.aiPrivacyNoticeAccepted is bool
+        && data.e2eConfigured is bool
+        && (!('e2eSalt' in data) || (data.e2eSalt is string && data.e2eSalt.size() <= 128))
+        && (!('e2eVerifier' in data) || (data.e2eVerifier is string && data.e2eVerifier.size() <= 256))
+        && (!('quietHoursStart' in data) || isValidTimeHHMM(data.quietHoursStart))
+        && (!('quietHoursEnd' in data) || isValidTimeHHMM(data.quietHoursEnd))
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAiUsageDay(data, userId, dayKey) {
+      return data.keys().hasAll(['uid', 'dayKey', 'requestCount', 'inputTokensEst', 'outputTokensEst', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'dayKey', 'requestCount', 'inputTokensEst', 'outputTokensEst', 'updatedAt'])
+        && data.uid == userId
+        && data.dayKey == dayKey
+        && isValidDateYMD(dayKey)
+        && data.requestCount is int && data.requestCount >= 1 && data.requestCount <= 1000
+        && data.inputTokensEst is int && data.inputTokensEst >= 0 && data.inputTokensEst <= 10000000
+        && data.outputTokensEst is int && data.outputTokensEst >= 0 && data.outputTokensEst <= 10000000
+        && data.updatedAt == request.time;
+    }
+
+    function isValidDebtLedger(data, userId) {
+      return data.keys().hasAll(['uid', 'personName', 'onTimeCount', 'lateCount', 'activeDebtCount', 'version', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'personName', 'personPhone', 'onTimeCount', 'lateCount', 'activeDebtCount', 'version', 'createdAt', 'updatedAt'])
+        && data.uid == userId
+        && data.personName is string && data.personName.size() >= 1 && data.personName.size() <= 120
+        && (!('personPhone' in data) || (data.personPhone is string && data.personPhone.size() <= 32))
+        && data.onTimeCount is int && data.onTimeCount >= 0
+        && data.lateCount is int && data.lateCount >= 0
+        && data.activeDebtCount is int && data.activeDebtCount >= 0
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDebtRecord(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'direction', 'personKey', 'personName', 'category',
+          'principalMinor', 'remainingMinor', 'currency', 'interestRateBps',
+          'status', 'paymentCount', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'direction', 'personKey', 'personName', 'personPhone', 'category',
+          'principalMinor', 'remainingMinor', 'currency', 'interestRateBps',
+          'dueDate', 'status', 'notes', 'paymentCount', 'lastPaymentDate',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && data.direction in ['i_owe', 'owed_to_me']
+        && isValidId(data.personKey)
+        && data.personName is string && data.personName.size() >= 1 && data.personName.size() <= 120
+        && (!('personPhone' in data) || (data.personPhone is string && data.personPhone.size() <= 32))
+        && data.category in ['personal', 'family', 'business', 'loan', 'bill_split', 'other']
+        && data.principalMinor is int && data.principalMinor > 0 && data.principalMinor <= 1000000000000
+        && data.remainingMinor is int && data.remainingMinor >= 0 && data.remainingMinor <= data.principalMinor
+        && isValidCurrency(data.currency)
+        && data.interestRateBps is int && data.interestRateBps >= 0 && data.interestRateBps <= 10000
+        && (!('dueDate' in data) || isValidDateYMD(data.dueDate))
+        && data.status in ['active', 'partial', 'overdue', 'settled']
+        && (data.remainingMinor == 0 ? data.status == 'settled' : data.status != 'settled')
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && data.paymentCount is int && data.paymentCount >= 0 && data.paymentCount <= 10000
+        && (!('lastPaymentDate' in data) || isValidDateYMD(data.lastPaymentDate))
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidDebtPayment(data, userId, debtId) {
+      return data.keys().hasAll(['uid', 'debtId', 'amountMinor', 'currency', 'paidOn', 'method', 'wasOnTime', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'debtId', 'amountMinor', 'currency', 'paidOn', 'method', 'note', 'wasOnTime', 'createdAt'])
+        && data.uid == userId
+        && data.debtId == debtId
+        && data.amountMinor is int && data.amountMinor > 0 && data.amountMinor <= 1000000000000
+        && isValidCurrency(data.currency)
+        && isValidDateYMD(data.paidOn)
+        && data.method in ['cash', 'bank_transfer', 'zaincash', 'fib', 'fastpay', 'other']
+        && (!('note' in data) || (data.note is string && data.note.size() <= 500))
+        && data.wasOnTime is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidReminderItem(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'title', 'category', 'priority', 'dueAtIso',
+          'respectQuietHours', 'status', 'isCompleted', 'completedCount',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'title', 'notes', 'category', 'priority', 'dueAtIso',
+          'rrule', 'snoozedUntilIso', 'respectQuietHours', 'status',
+          'isCompleted', 'completedCount', 'lastCompletedAtIso', 'linkedDebtId',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && data.category in ['routine', 'birthday', 'debt', 'task', 'medicine', 'bill', 'expiry', 'custom']
+        && data.priority in ['low', 'normal', 'high', 'urgent']
+        && isValidIsoTimestamp(data.dueAtIso)
+        && (!('rrule' in data) || (data.rrule is string && data.rrule.size() <= 200))
+        && (!('snoozedUntilIso' in data) || isValidIsoTimestamp(data.snoozedUntilIso))
+        && data.respectQuietHours is bool
+        && data.status in ['scheduled', 'snoozed', 'completed', 'archived']
+        && data.isCompleted is bool
+        && (data.status == 'completed' ? data.isCompleted == true : data.isCompleted == false)
+        && data.completedCount is int && data.completedCount >= 0 && data.completedCount <= 100000
+        && (!('lastCompletedAtIso' in data) || isValidIsoTimestamp(data.lastCompletedAtIso))
+        && (!('linkedDebtId' in data) || isValidId(data.linkedDebtId))
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTaskItem(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'listId', 'title', 'priority', 'sortKey',
+          'status', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'listId', 'title', 'notes', 'priority', 'sortKey',
+          'status', 'dueDate', 'subtasks', 'tags', 'completedAtIso',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && isValidId(data.listId)
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && data.priority is int && data.priority >= 1 && data.priority <= 4
+        && isValidSortKey(data.sortKey)
+        && data.status in ['todo', 'in_progress', 'done']
+        && (!('dueDate' in data) || isValidDateYMD(data.dueDate))
+        && (!('subtasks' in data) || isValidSubtaskList(data.subtasks))
+        && (!('tags' in data) || isValidTagList(data.tags))
+        && (!('completedAtIso' in data) || isValidIsoTimestamp(data.completedAtIso))
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNoteFolder(data, userId, folderId) {
+      return data.keys().hasAll(['uid', 'name', 'sortKey', 'isLockedFolder', 'version', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'name', 'parentId', 'sortKey', 'isLockedFolder', 'version', 'createdAt', 'updatedAt'])
+        && data.uid == userId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && (!('parentId' in data) || (isValidId(data.parentId) && data.parentId != folderId))
+        && isValidSortKey(data.sortKey)
+        && data.isLockedFolder is bool
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNoteItem(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'title', 'content', 'isEncrypted', 'isLocked',
+          'pinned', 'wordCount', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'folderId', 'title', 'content', 'tags',
+          'isEncrypted', 'isLocked', 'pinned', 'wordCount',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && (!('folderId' in data) || isValidId(data.folderId))
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.content is string && data.content.size() <= 100000
+        && (!('tags' in data) || isValidTagList(data.tags))
+        && data.isEncrypted is bool
+        && data.isLocked is bool
+        && (!data.isEncrypted || data.isLocked == true)
+        && data.pinned is bool
+        && data.wordCount is int && data.wordCount >= 0 && data.wordCount <= 100000
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNoteVersion(data, userId, noteId) {
+      return data.keys().hasAll(['uid', 'noteId', 'title', 'content', 'isEncrypted', 'versionNumber', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'noteId', 'title', 'content', 'isEncrypted', 'versionNumber', 'createdAt'])
+        && data.uid == userId
+        && data.noteId == noteId
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.content is string && data.content.size() <= 100000
+        && data.isEncrypted is bool
+        && data.versionNumber is int && data.versionNumber >= 1 && data.versionNumber <= 100000
+        && data.createdAt is timestamp;
+    }
+
+    function isValidVaultFolder(data, userId, folderId) {
+      return data.keys().hasAll(['uid', 'name', 'sortKey', 'isLockedFolder', 'version', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'name', 'parentId', 'sortKey', 'isLockedFolder', 'version', 'createdAt', 'updatedAt'])
+        && data.uid == userId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 80
+        && (!('parentId' in data) || (isValidId(data.parentId) && data.parentId != folderId))
+        && isValidSortKey(data.sortKey)
+        && data.isLockedFolder is bool
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidVaultDocumentMeta(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'title', 'docType', 'storageMode', 'mimeType',
+          'sizeBytes', 'pageCount', 'isEncrypted', 'isLocked',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'folderId', 'title', 'docType', 'storageMode', 'mimeType',
+          'sizeBytes', 'pageCount', 'expiryDate', 'issuer', 'documentNumberLast4',
+          'tags', 'notes', 'ocrText', 'isEncrypted', 'isLocked',
+          'localFileKey', 'linkedReminderId', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && (!('folderId' in data) || isValidId(data.folderId))
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 200
+        && data.docType in ['passport', 'id', 'license', 'insurance', 'warranty', 'invoice', 'contract', 'receipt', 'medical', 'other']
+        && data.storageMode in ['local_only', 'cloud_private']
+        && data.mimeType is string && data.mimeType.size() >= 1 && data.mimeType.size() <= 100
+        && data.sizeBytes is int && data.sizeBytes >= 0 && data.sizeBytes <= 52428800
+        && data.pageCount is int && data.pageCount >= 1 && data.pageCount <= 100
+        && (!('expiryDate' in data) || isValidDateYMD(data.expiryDate))
+        && (!('issuer' in data) || (data.issuer is string && data.issuer.size() <= 120))
+        && (!('documentNumberLast4' in data) || (data.documentNumberLast4 is string && data.documentNumberLast4.size() <= 64))
+        && (!('tags' in data) || isValidTagList(data.tags))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && (!('ocrText' in data) || (data.ocrText is string && data.ocrText.size() <= 20000))
+        && data.isEncrypted is bool
+        && data.isLocked is bool
+        && (!data.isEncrypted || data.isLocked == true)
+        && (!('localFileKey' in data) || isValidId(data.localFileKey))
+        && (!('linkedReminderId' in data) || isValidId(data.linkedReminderId))
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidHabitItem(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'name', 'category', 'frequency', 'targetPerWeek',
+          'currentStreak', 'bestStreak', 'totalCompletions', 'archived',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'name', 'category', 'frequency', 'targetPerWeek',
+          'reminderTime', 'currentStreak', 'bestStreak', 'totalCompletions',
+          'lastCompletedDate', 'archived', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.category in ['health', 'mindfulness', 'learning', 'finance', 'fitness', 'productivity', 'custom']
+        && data.frequency in ['daily', 'weekly']
+        && data.targetPerWeek is int && data.targetPerWeek >= 1 && data.targetPerWeek <= 7
+        && (!('reminderTime' in data) || isValidTimeHHMM(data.reminderTime))
+        && data.currentStreak is int && data.currentStreak >= 0 && data.currentStreak <= 100000
+        && data.bestStreak is int && data.bestStreak >= data.currentStreak && data.bestStreak <= 100000
+        && data.totalCompletions is int && data.totalCompletions >= 0 && data.totalCompletions <= 1000000
+        && (!('lastCompletedDate' in data) || isValidDateYMD(data.lastCompletedDate))
+        && data.archived is bool
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidHabitMonthLog(data, userId) {
+      return data.keys().hasAll(['uid', 'habitId', 'monthKey', 'days', 'version', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'habitId', 'monthKey', 'days', 'version', 'createdAt', 'updatedAt'])
+        && data.uid == userId
+        && isValidId(data.habitId)
+        && isValidMonthKey(data.monthKey)
+        && isValidDayKeyList(data.days)
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidTransactionItem(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'type', 'amountMinor', 'currency', 'category',
+          'occurredOn', 'account', 'isRecurring', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'type', 'amountMinor', 'currency', 'category',
+          'occurredOn', 'merchant', 'account', 'note', 'isRecurring',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && data.type in ['income', 'expense']
+        && data.amountMinor is int && data.amountMinor > 0 && data.amountMinor <= 1000000000000
+        && isValidCurrency(data.currency)
+        && isValidTransactionCategory(data.category)
+        && isValidDateYMD(data.occurredOn)
+        && (!('merchant' in data) || (data.merchant is string && data.merchant.size() <= 120))
+        && data.account in ['cash', 'bank', 'zaincash', 'fib', 'fastpay', 'card']
+        && (!('note' in data) || (data.note is string && data.note.size() <= 500))
+        && data.isRecurring is bool
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBudgetLimit(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'category', 'limitMinor', 'currency', 'alertThresholdPct',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'category', 'limitMinor', 'currency', 'alertThresholdPct',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && isValidExpenseCategory(data.category)
+        && data.limitMinor is int && data.limitMinor > 0 && data.limitMinor <= 1000000000000
+        && isValidCurrency(data.currency)
+        && data.alertThresholdPct is int && data.alertThresholdPct >= 50 && data.alertThresholdPct <= 100
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidSubscriptionItem(data, userId) {
+      return data.keys().hasAll([
+          'uid', 'name', 'amountMinor', 'currency', 'cadence',
+          'nextBillingDate', 'category', 'status', 'version', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'uid', 'name', 'amountMinor', 'currency', 'cadence',
+          'nextBillingDate', 'category', 'status', 'linkedReminderId', 'note',
+          'version', 'createdAt', 'updatedAt'
+        ])
+        && data.uid == userId
+        && data.name is string && data.name.size() >= 1 && data.name.size() <= 120
+        && data.amountMinor is int && data.amountMinor > 0 && data.amountMinor <= 1000000000000
+        && isValidCurrency(data.currency)
+        && data.cadence in ['weekly', 'monthly', 'yearly']
+        && isValidDateYMD(data.nextBillingDate)
+        && isValidExpenseCategory(data.category)
+        && data.status in ['active', 'paused', 'cancelled']
+        && (!('linkedReminderId' in data) || isValidId(data.linkedReminderId))
+        && (!('note' in data) || (data.note is string && data.note.size() <= 500))
+        && data.version is int && data.version >= 1
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 4. Per-User Tenant Isolation Matches
+    match /users/{userId} {
+      allow get: if isVerifiedOwner(userId);
+      allow list: if false;
+      allow create: if isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isVerifiedOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().version == existing().version + 1
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'displayName', 'email', 'locale', 'theme',
+          'primaryCurrency', 'secondaryCurrency', 'vaultStorageMode',
+          'aiGlobalEnabled', 'aiModuleToggles', 'analyticsConsent',
+          'aiPrivacyNoticeAccepted', 'e2eConfigured', 'e2eSalt', 'e2eVerifier',
+          'quietHoursStart', 'quietHoursEnd', 'version', 'updatedAt'
+        ]);
+      allow delete: if false;
+
+      // Server-only entitlements (client read-only)
+      match /entitlements/{entitlementId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(entitlementId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create, update, delete: if false;
+      }
+
+      // Monotonic daily AI quota counter (no delete, no decrement)
+      match /aiUsage/{dayKey} {
+        allow get: if isVerifiedOwner(userId) && isValidId(dayKey);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId)
+          && isValidAiUsageDay(incoming(), userId, dayKey)
+          && incoming().requestCount == 1;
+        allow update: if isVerifiedOwner(userId)
+          && isValidAiUsageDay(incoming(), userId, dayKey)
+          && incoming().uid == existing().uid
+          && incoming().dayKey == existing().dayKey
+          && incoming().requestCount == existing().requestCount + 1
+          && incoming().inputTokensEst >= existing().inputTokensEst
+          && incoming().outputTokensEst >= existing().outputTokensEst
+          && incoming().diff(existing()).affectedKeys().hasOnly(['requestCount', 'inputTokensEst', 'outputTokensEst', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /debtLedgers/{personKey} {
+        allow get: if isVerifiedOwner(userId) && isValidId(personKey);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(personKey)
+          && isValidDebtLedger(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(personKey)
+          && isValidDebtLedger(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'personName', 'personPhone', 'onTimeCount', 'lateCount', 'activeDebtCount', 'version', 'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(personKey);
+      }
+
+      match /debts/{debtId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(debtId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(debtId)
+          && isValidDebtRecord(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(debtId)
+          && isValidDebtRecord(incoming(), userId)
+          && existing().status != 'settled'
+          && incoming().uid == existing().uid
+          && incoming().direction == existing().direction
+          && incoming().currency == existing().currency
+          && incoming().principalMinor == existing().principalMinor
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            (
+              incoming().remainingMinor < existing().remainingMinor
+              && incoming().paymentCount == existing().paymentCount + 1
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'remainingMinor', 'status', 'paymentCount', 'lastPaymentDate', 'notes', 'version', 'updatedAt'
+              ])
+            )
+            ||
+            (
+              incoming().remainingMinor == existing().remainingMinor
+              && incoming().paymentCount == existing().paymentCount
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'personName', 'personPhone', 'category', 'interestRateBps', 'dueDate', 'status', 'notes', 'version', 'updatedAt'
+              ])
+            )
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(debtId);
+
+        match /payments/{paymentId} {
+          allow get: if isVerifiedOwner(userId) && isValidId(debtId) && isValidId(paymentId);
+          allow list: if isVerifiedOwner(userId) && isValidId(debtId) && resource.data.uid == request.auth.uid;
+          allow create: if isVerifiedOwner(userId) && isValidId(debtId) && isValidId(paymentId)
+            && isValidDebtPayment(incoming(), userId, debtId)
+            && incoming().createdAt == request.time
+            && exists(/databases/$(database)/documents/users/$(userId)/debts/$(debtId));
+          allow update: if false;
+          allow delete: if isVerifiedOwner(userId) && isValidId(debtId) && isValidId(paymentId);
+        }
+      }
+
+      match /reminders/{reminderId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(reminderId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(reminderId)
+          && isValidReminderItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(reminderId)
+          && isValidReminderItem(incoming(), userId)
+          && existing().status != 'archived'
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            (
+              incoming().completedCount >= existing().completedCount
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'dueAtIso', 'snoozedUntilIso', 'status', 'isCompleted',
+                'completedCount', 'lastCompletedAtIso', 'version', 'updatedAt'
+              ])
+            )
+            ||
+            (
+              incoming().completedCount == existing().completedCount
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'snoozedUntilIso', 'status', 'version', 'updatedAt'
+              ])
+            )
+            ||
+            (
+              incoming().completedCount == existing().completedCount
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'title', 'notes', 'category', 'priority', 'dueAtIso', 'rrule',
+                'snoozedUntilIso', 'respectQuietHours', 'status', 'isCompleted',
+                'linkedDebtId', 'version', 'updatedAt'
+              ])
+            )
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(reminderId);
+      }
+
+      match /tasks/{taskId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(taskId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(taskId)
+          && isValidTaskItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(taskId)
+          && isValidTaskItem(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'sortKey', 'listId', 'version', 'updatedAt'
+            ])
+            ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'subtasks', 'completedAtIso', 'version', 'updatedAt'
+            ])
+            ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'listId', 'title', 'notes', 'priority', 'dueDate', 'subtasks',
+              'tags', 'status', 'completedAtIso', 'version', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(taskId);
+      }
+
+      match /noteFolders/{folderId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(folderId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(folderId)
+          && isValidNoteFolder(incoming(), userId, folderId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(folderId)
+          && isValidNoteFolder(incoming(), userId, folderId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'parentId', 'sortKey', 'isLockedFolder', 'version', 'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(folderId);
+      }
+
+      match /notes/{noteId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(noteId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(noteId)
+          && isValidNoteItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(noteId)
+          && isValidNoteItem(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'pinned', 'folderId', 'version', 'updatedAt'
+            ])
+            ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'content', 'isEncrypted', 'isLocked', 'wordCount', 'version', 'updatedAt'
+            ])
+            ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'content', 'folderId', 'tags', 'pinned', 'wordCount', 'version', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(noteId);
+
+        match /versions/{versionId} {
+          allow get: if isVerifiedOwner(userId) && isValidId(noteId) && isValidId(versionId);
+          allow list: if isVerifiedOwner(userId) && isValidId(noteId) && resource.data.uid == request.auth.uid;
+          allow create: if isVerifiedOwner(userId) && isValidId(noteId) && isValidId(versionId)
+            && isValidNoteVersion(incoming(), userId, noteId)
+            && incoming().createdAt == request.time
+            && exists(/databases/$(database)/documents/users/$(userId)/notes/$(noteId));
+          allow update: if false;
+          allow delete: if isVerifiedOwner(userId) && isValidId(noteId) && isValidId(versionId);
+        }
+      }
+
+      match /vaultFolders/{folderId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(folderId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(folderId)
+          && isValidVaultFolder(incoming(), userId, folderId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(folderId)
+          && isValidVaultFolder(incoming(), userId, folderId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'parentId', 'sortKey', 'isLockedFolder', 'version', 'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(folderId);
+      }
+
+      match /documents/{docId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(docId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(docId)
+          && isValidVaultDocumentMeta(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(docId)
+          && isValidVaultDocumentMeta(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'folderId', 'title', 'docType', 'expiryDate', 'issuer',
+              'documentNumberLast4', 'tags', 'notes', 'ocrText', 'linkedReminderId',
+              'version', 'updatedAt'
+            ])
+            ||
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'storageMode', 'isEncrypted', 'isLocked', 'sizeBytes', 'mimeType', 'pageCount',
+              'localFileKey', 'version', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(docId);
+      }
+
+      match /habits/{habitId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(habitId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(habitId)
+          && isValidHabitItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(habitId)
+          && isValidHabitItem(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            // Action 1: Update streaks & completions after check-in
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'currentStreak', 'bestStreak', 'totalCompletions', 'lastCompletedDate', 'version', 'updatedAt'
+            ])
+            ||
+            // Action 2: Edit habit definition or archive toggle
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'category', 'frequency', 'targetPerWeek', 'reminderTime', 'archived', 'version', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(habitId);
+      }
+
+      match /habitLogs/{bucketId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(bucketId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(bucketId)
+          && isValidHabitMonthLog(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/users/$(userId)/habits/$(incoming().habitId));
+        allow update: if isVerifiedOwner(userId) && isValidId(bucketId)
+          && isValidHabitMonthLog(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().habitId == existing().habitId
+          && incoming().monthKey == existing().monthKey
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'days', 'version', 'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(bucketId);
+      }
+
+      match /transactions/{txId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(txId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(txId)
+          && isValidTransactionItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(txId)
+          && isValidTransactionItem(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'type', 'amountMinor', 'currency', 'category', 'occurredOn',
+            'merchant', 'account', 'note', 'isRecurring', 'version', 'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(txId);
+      }
+
+      match /budgets/{budgetId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(budgetId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(budgetId)
+          && isValidBudgetLimit(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(budgetId)
+          && isValidBudgetLimit(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && incoming().diff(existing()).affectedKeys().hasOnly([
+            'category', 'limitMinor', 'currency', 'alertThresholdPct', 'version', 'updatedAt'
+          ]);
+        allow delete: if isVerifiedOwner(userId) && isValidId(budgetId);
+      }
+
+      match /subscriptions/{subId} {
+        allow get: if isVerifiedOwner(userId) && isValidId(subId);
+        allow list: if isVerifiedOwner(userId) && resource.data.uid == request.auth.uid;
+        allow create: if isVerifiedOwner(userId) && isValidId(subId)
+          && isValidSubscriptionItem(incoming(), userId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time;
+        allow update: if isVerifiedOwner(userId) && isValidId(subId)
+          && isValidSubscriptionItem(incoming(), userId)
+          && incoming().uid == existing().uid
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && incoming().version == existing().version + 1
+          && (
+            // Action 1: Pause/resume/cancel or advance billing date / link reminder
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'status', 'nextBillingDate', 'linkedReminderId', 'version', 'updatedAt'
+            ])
+            ||
+            // Action 2: Edit subscription metadata
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'amountMinor', 'currency', 'cadence', 'nextBillingDate',
+              'category', 'status', 'linkedReminderId', 'note', 'version', 'updatedAt'
+            ])
+          );
+        allow delete: if isVerifiedOwner(userId) && isValidId(subId);
+      }
+    }
+  }
+}

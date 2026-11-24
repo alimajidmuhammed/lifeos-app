@@ -1,0 +1,489 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Root user settings, localization, theme, AI privacy consent, and opt-in E2E metadata.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "locale": { "type": "string", "enum": ["en", "ar", "ckb"] },
+        "theme": { "type": "string", "enum": ["light", "dark", "amoled"] },
+        "primaryCurrency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "secondaryCurrency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "vaultStorageMode": { "type": "string", "enum": ["local_only", "cloud_private"] },
+        "aiGlobalEnabled": { "type": "boolean" },
+        "aiModuleToggles": { "type": "object" },
+        "analyticsConsent": { "type": "boolean" },
+        "aiPrivacyNoticeAccepted": { "type": "boolean" },
+        "e2eConfigured": { "type": "boolean" },
+        "e2eSalt": { "type": "string", "maxLength": 128 },
+        "e2eVerifier": { "type": "string", "maxLength": 256 },
+        "quietHoursStart": { "type": "string", "maxLength": 5, "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+        "quietHoursEnd": { "type": "string", "maxLength": 5, "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "displayName",
+        "locale",
+        "theme",
+        "primaryCurrency",
+        "secondaryCurrency",
+        "vaultStorageMode",
+        "aiGlobalEnabled",
+        "analyticsConsent",
+        "aiPrivacyNoticeAccepted",
+        "e2eConfigured",
+        "version",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Entitlement": {
+      "title": "Entitlement",
+      "description": "Server-managed subscription plan and feature limits. Client read-only.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "plan": { "type": "string", "enum": ["free", "pro", "family"] },
+        "aiDailyQuota": { "type": "integer" },
+        "storageMbLimit": { "type": "integer" },
+        "maxDocuments": { "type": "integer" },
+        "e2eVaultAllowed": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "plan", "aiDailyQuota", "storageMbLimit", "maxDocuments", "e2eVaultAllowed", "updatedAt"]
+    },
+    "AiUsageDay": {
+      "title": "AiUsageDay",
+      "description": "Daily per-user AI quota metadata (counts and token estimates only, never prompt content).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dayKey": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "requestCount": { "type": "integer" },
+        "inputTokensEst": { "type": "integer" },
+        "outputTokensEst": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "dayKey", "requestCount", "inputTokensEst", "outputTokensEst", "updatedAt"]
+    },
+    "DebtLedger": {
+      "title": "DebtLedger",
+      "description": "Denormalized per-person multi-currency ledger totals and repayment reliability.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "personName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "personPhone": { "type": "string", "maxLength": 32 },
+        "onTimeCount": { "type": "integer" },
+        "lateCount": { "type": "integer" },
+        "activeDebtCount": { "type": "integer" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "personName", "onTimeCount", "lateCount", "activeDebtCount", "version", "createdAt", "updatedAt"]
+    },
+    "DebtRecord": {
+      "title": "DebtRecord",
+      "description": "Individual debt record stored strictly in integer minor units with integer APR basis points.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "direction": { "type": "string", "enum": ["i_owe", "owed_to_me"] },
+        "personKey": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "personName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "personPhone": { "type": "string", "maxLength": 32 },
+        "category": { "type": "string", "enum": ["personal", "family", "business", "loan", "bill_split", "other"] },
+        "principalMinor": { "type": "integer" },
+        "remainingMinor": { "type": "integer" },
+        "currency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "interestRateBps": { "type": "integer" },
+        "dueDate": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "status": { "type": "string", "enum": ["active", "partial", "overdue", "settled"] },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "paymentCount": { "type": "integer" },
+        "lastPaymentDate": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "direction",
+        "personKey",
+        "personName",
+        "category",
+        "principalMinor",
+        "remainingMinor",
+        "currency",
+        "interestRateBps",
+        "status",
+        "paymentCount",
+        "version",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "DebtPayment": {
+      "title": "DebtPayment",
+      "description": "Immutable append-only repayment ledger entry under a specific debt.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "debtId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "amountMinor": { "type": "integer" },
+        "currency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "paidOn": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "method": { "type": "string", "enum": ["cash", "bank_transfer", "zaincash", "fib", "fastpay", "other"] },
+        "note": { "type": "string", "maxLength": 500 },
+        "wasOnTime": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "debtId", "amountMinor", "currency", "paidOn", "method", "wasOnTime", "createdAt"]
+    },
+    "ReminderItem": {
+      "title": "ReminderItem",
+      "description": "Recurring or one-time smart reminder with RFC-5545 RRULE, 8 channels, snooze, and quiet hours policy.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "category": { "type": "string", "enum": ["routine", "birthday", "debt", "task", "medicine", "bill", "expiry", "custom"] },
+        "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"] },
+        "dueAtIso": { "type": "string", "maxLength": 30, "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$" },
+        "rrule": { "type": "string", "maxLength": 200 },
+        "snoozedUntilIso": { "type": "string", "maxLength": 30, "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$" },
+        "respectQuietHours": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["scheduled", "snoozed", "completed", "archived"] },
+        "isCompleted": { "type": "boolean" },
+        "completedCount": { "type": "integer" },
+        "lastCompletedAtIso": { "type": "string", "maxLength": 30, "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$" },
+        "linkedDebtId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "title",
+        "category",
+        "priority",
+        "dueAtIso",
+        "respectQuietHours",
+        "status",
+        "isCompleted",
+        "completedCount",
+        "version",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "TaskItem": {
+      "title": "TaskItem",
+      "description": "Planner task with fractional sortKey for single-write drag ordering, due date, and bounded subtasks.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "listId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "priority": { "type": "integer" },
+        "sortKey": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[0-9A-Za-z]+$" },
+        "status": { "type": "string", "enum": ["todo", "in_progress", "done"] },
+        "dueDate": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "subtasks": { "type": "array", "description": "Bounded up to 20 checklist items { id, title, done }." },
+        "tags": { "type": "array", "description": "Bounded up to 10 short string tags." },
+        "completedAtIso": { "type": "string", "maxLength": 30, "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{3})?Z$" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "listId", "title", "priority", "sortKey", "status", "version", "createdAt", "updatedAt"]
+    },
+    "NoteFolder": {
+      "title": "NoteFolder",
+      "description": "Nested folder for organizing Markdown notes, with optional E2E default flag.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "parentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sortKey": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[0-9A-Za-z]+$" },
+        "isLockedFolder": { "type": "boolean" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "sortKey", "isLockedFolder", "version", "createdAt", "updatedAt"]
+    },
+    "NoteItem": {
+      "title": "NoteItem",
+      "description": "Markdown or opt-in AES-256-GCM E2E encrypted note with optional nested folder and tags.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "folderId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 100000 },
+        "tags": { "type": "array", "description": "Bounded up to 10 short string tags." },
+        "isEncrypted": { "type": "boolean" },
+        "isLocked": { "type": "boolean" },
+        "pinned": { "type": "boolean" },
+        "wordCount": { "type": "integer" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "title", "content", "isEncrypted", "isLocked", "pinned", "wordCount", "version", "createdAt", "updatedAt"]
+    },
+    "NoteVersion": {
+      "title": "NoteVersion",
+      "description": "Immutable append-only revision snapshot under a specific note.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "noteId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 100000 },
+        "isEncrypted": { "type": "boolean" },
+        "versionNumber": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "noteId", "title", "content", "isEncrypted", "versionNumber", "createdAt"]
+    },
+    "VaultFolder": {
+      "title": "VaultFolder",
+      "description": "Nested folder for organizing Document Vault items, with optional E2E default lock.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "parentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "sortKey": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[0-9A-Za-z]+$" },
+        "isLockedFolder": { "type": "boolean" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "sortKey", "isLockedFolder", "version", "createdAt", "updatedAt"]
+    },
+    "VaultDocumentMeta": {
+      "title": "VaultDocumentMeta",
+      "description": "Document Vault metadata with expiry tracking and local/cloud posture (never stores raw binaries in Firestore).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "folderId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "docType": { "type": "string", "enum": ["passport", "id", "license", "insurance", "warranty", "invoice", "contract", "receipt", "medical", "other"] },
+        "storageMode": { "type": "string", "enum": ["local_only", "cloud_private"] },
+        "mimeType": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "sizeBytes": { "type": "integer" },
+        "pageCount": { "type": "integer" },
+        "expiryDate": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "issuer": { "type": "string", "maxLength": 120 },
+        "documentNumberLast4": { "type": "string", "maxLength": 16 },
+        "tags": { "type": "array", "description": "Bounded up to 10 short string tags." },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "ocrText": { "type": "string", "maxLength": 20000 },
+        "isEncrypted": { "type": "boolean" },
+        "isLocked": { "type": "boolean" },
+        "localFileKey": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "linkedReminderId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "title",
+        "docType",
+        "storageMode",
+        "mimeType",
+        "sizeBytes",
+        "pageCount",
+        "isEncrypted",
+        "isLocked",
+        "version",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "HabitItem": {
+      "title": "HabitItem",
+      "description": "Habit definition with frequency, weekly target, category, and streak counters.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "category": { "type": "string", "enum": ["health", "mindfulness", "learning", "finance", "fitness", "productivity", "custom"] },
+        "frequency": { "type": "string", "enum": ["daily", "weekly"] },
+        "targetPerWeek": { "type": "integer" },
+        "reminderTime": { "type": "string", "maxLength": 5, "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$" },
+        "currentStreak": { "type": "integer" },
+        "bestStreak": { "type": "integer" },
+        "totalCompletions": { "type": "integer" },
+        "lastCompletedDate": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "archived": { "type": "boolean" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "category", "frequency", "targetPerWeek", "currentStreak", "bestStreak", "totalCompletions", "archived", "version", "createdAt", "updatedAt"]
+    },
+    "HabitMonthLog": {
+      "title": "HabitMonthLog",
+      "description": "Monthly-bucketed completion days for a habit (up to 31 YYYY-MM-DD entries per document).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "habitId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "monthKey": { "type": "string", "maxLength": 7, "pattern": "^\\d{4}-\\d{2}$" },
+        "days": { "type": "array", "description": "Bounded up to 31 YYYY-MM-DD completed day keys." },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "habitId", "monthKey", "days", "version", "createdAt", "updatedAt"]
+    },
+    "TransactionItem": {
+      "title": "TransactionItem",
+      "description": "Personal finance income or expense record stored strictly in integer minor units.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "amountMinor": { "type": "integer" },
+        "currency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "category": { "type": "string", "enum": ["salary", "freelance", "business", "gift", "housing", "food", "transport", "utilities", "health", "shopping", "subscriptions", "education", "entertainment", "debt_payment", "savings", "other"] },
+        "occurredOn": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "merchant": { "type": "string", "maxLength": 120 },
+        "account": { "type": "string", "enum": ["cash", "bank", "zaincash", "fib", "fastpay", "card"] },
+        "note": { "type": "string", "maxLength": 500 },
+        "isRecurring": { "type": "boolean" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "type", "amountMinor", "currency", "category", "occurredOn", "account", "isRecurring", "version", "createdAt", "updatedAt"]
+    },
+    "BudgetLimit": {
+      "title": "BudgetLimit",
+      "description": "Monthly category spending budget in integer minor units.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "category": { "type": "string", "enum": ["housing", "food", "transport", "utilities", "health", "shopping", "subscriptions", "education", "entertainment", "debt_payment", "savings", "other"] },
+        "limitMinor": { "type": "integer" },
+        "currency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "alertThresholdPct": { "type": "integer" },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "category", "limitMinor", "currency", "alertThresholdPct", "version", "createdAt", "updatedAt"]
+    },
+    "SubscriptionItem": {
+      "title": "SubscriptionItem",
+      "description": "Recurring subscription or fixed bill tracked in integer minor units.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "amountMinor": { "type": "integer" },
+        "currency": { "type": "string", "enum": ["IQD", "USD", "EUR"] },
+        "cadence": { "type": "string", "enum": ["weekly", "monthly", "yearly"] },
+        "nextBillingDate": { "type": "string", "maxLength": 10, "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "category": { "type": "string", "enum": ["housing", "food", "transport", "utilities", "health", "shopping", "subscriptions", "education", "entertainment", "debt_payment", "savings", "other"] },
+        "status": { "type": "string", "enum": ["active", "paused", "cancelled"] },
+        "linkedReminderId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "note": { "type": "string", "maxLength": 500 },
+        "version": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "amountMinor", "currency", "cadence", "nextBillingDate", "category", "status", "version", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Root per-user profile, localization, theme, and privacy preferences."
+    },
+    "/users/{userId}/entitlements/{entitlementId}": {
+      "schema": { "$ref": "#/entities/Entitlement" },
+      "description": "Server-managed plan limits and entitlements (read-only for client)."
+    },
+    "/users/{userId}/aiUsage/{dayKey}": {
+      "schema": { "$ref": "#/entities/AiUsageDay" },
+      "description": "Monotonic daily per-user AI quota counters."
+    },
+    "/users/{userId}/debtLedgers/{personKey}": {
+      "schema": { "$ref": "#/entities/DebtLedger" },
+      "description": "Per-person debt ledger aggregates."
+    },
+    "/users/{userId}/debts/{debtId}": {
+      "schema": { "$ref": "#/entities/DebtRecord" },
+      "description": "User debt items."
+    },
+    "/users/{userId}/debts/{debtId}/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/DebtPayment" },
+      "description": "Immutable append-only repayment audit entries for a specific debt."
+    },
+    "/users/{userId}/reminders/{reminderId}": {
+      "schema": { "$ref": "#/entities/ReminderItem" },
+      "description": "Smart reminder items."
+    },
+    "/users/{userId}/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/TaskItem" },
+      "description": "Planner task items."
+    },
+    "/users/{userId}/noteFolders/{folderId}": {
+      "schema": { "$ref": "#/entities/NoteFolder" },
+      "description": "Nested note folders with optional E2E default lock."
+    },
+    "/users/{userId}/notes/{noteId}": {
+      "schema": { "$ref": "#/entities/NoteItem" },
+      "description": "Notes and opt-in E2E encrypted notes."
+    },
+    "/users/{userId}/notes/{noteId}/versions/{versionId}": {
+      "schema": { "$ref": "#/entities/NoteVersion" },
+      "description": "Immutable append-only note version history snapshots."
+    },
+    "/users/{userId}/vaultFolders/{folderId}": {
+      "schema": { "$ref": "#/entities/VaultFolder" },
+      "description": "Nested Document Vault folders with optional E2E default lock."
+    },
+    "/users/{userId}/documents/{docId}": {
+      "schema": { "$ref": "#/entities/VaultDocumentMeta" },
+      "description": "Document Vault metadata records (raw binaries stay in Local IndexedDB or private Cloud Storage)."
+    },
+    "/users/{userId}/habits/{habitId}": {
+      "schema": { "$ref": "#/entities/HabitItem" },
+      "description": "Habit tracker definitions."
+    },
+    "/users/{userId}/habitLogs/{bucketId}": {
+      "schema": { "$ref": "#/entities/HabitMonthLog" },
+      "description": "Monthly-bucketed habit check-in logs (30x fewer reads/writes)."
+    },
+    "/users/{userId}/transactions/{txId}": {
+      "schema": { "$ref": "#/entities/TransactionItem" },
+      "description": "Personal finance income and expense ledger entries."
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": { "$ref": "#/entities/BudgetLimit" },
+      "description": "Monthly category spending limits."
+    },
+    "/users/{userId}/subscriptions/{subId}": {
+      "schema": { "$ref": "#/entities/SubscriptionItem" },
+      "description": "Recurring subscriptions and fixed bills."
+    }
+  }
+}

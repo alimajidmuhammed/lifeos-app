@@ -1,0 +1,513 @@
+import React, { useEffect } from 'react';
+import {
+  Bell,
+  BookText,
+  CheckSquare,
+  Cloud,
+  CloudOff,
+  Flame,
+  FolderLock,
+  Home,
+  LayoutGrid,
+  Lock,
+  LogIn,
+  LogOut,
+  Menu,
+  Settings,
+  Sparkles,
+  Wallet,
+  Scale,
+  X,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useUIStore, type NavRoute } from '../state/useUIStore';
+import { useOnlineStatus } from '../hooks/useLifeOS';
+import { authRepository } from '../data/repositories/firebaseWebAdapter';
+import { PWAInstallButton } from './PWAInstallButton';
+
+interface NavItem {
+  id: NavRoute;
+  labelKey: string;
+  icon: React.ComponentType<{ className?: string }>;
+  phase?: number;
+}
+
+export const ALL_NAV_ITEMS: NavItem[] = [
+  { id: 'home', labelKey: 'nav.home', icon: Home },
+  { id: 'debts', labelKey: 'nav.debts', icon: Scale },
+  { id: 'reminders', labelKey: 'nav.reminders', icon: Bell },
+  { id: 'planner', labelKey: 'nav.planner', icon: CheckSquare },
+  { id: 'notes', labelKey: 'nav.notes', icon: BookText },
+  { id: 'vault', labelKey: 'nav.vault', icon: FolderLock },
+  { id: 'habits', labelKey: 'nav.habits', icon: Flame },
+  { id: 'finance', labelKey: 'nav.finance', icon: Wallet },
+  { id: 'settings', labelKey: 'nav.settings', icon: Settings },
+];
+
+const MOBILE_PRIMARY_TABS: NavRoute[] = ['home', 'debts', 'reminders', 'vault'];
+
+export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
+  const activeRoute = useUIStore((s) => s.activeRoute);
+  const setActiveRoute = useUIStore((s) => s.setActiveRoute);
+  const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
+  const mobileMoreOpen = useUIStore((s) => s.mobileMoreOpen);
+  const setMobileMoreOpen = useUIStore((s) => s.setMobileMoreOpen);
+  const authUser = useUIStore((s) => s.authUser);
+  const pinEnabled = useUIStore((s) => s.pinEnabled);
+  const lockApp = useUIStore((s) => s.lockApp);
+  const toast = useUIStore((s) => s.toast);
+  const dismissToast = useUIStore((s) => s.dismissToast);
+  const showToast = useUIStore((s) => s.showToast);
+
+  const isOnline = useOnlineStatus();
+
+  // ── Global Keyboard Shortcuts ──
+  useEffect(() => {
+    let pendingG = false;
+    let pendingGTimer: number | undefined;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when user is typing in an input/textarea/select/contentEditable
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // ⌘K / Ctrl+K already triggers command palette, but reinforce it here
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+        return;
+      }
+
+      // '?' opens command palette
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+        return;
+      }
+
+      // 'G' sequence (G then H -> Home, G then F -> Finance, G then D -> Debts, etc.)
+      if (e.key === 'g' || e.key === 'G') {
+        if (!pendingG) {
+          pendingG = true;
+          window.clearTimeout(pendingGTimer);
+          pendingGTimer = window.setTimeout(() => {
+            pendingG = false;
+          }, 1000);
+          return;
+        }
+      }
+
+      if (pendingG) {
+        pendingG = false;
+        window.clearTimeout(pendingGTimer);
+        const k = e.key.toLowerCase();
+        if (k === 'h') { e.preventDefault(); setActiveRoute('home'); return; }
+        if (k === 'd') { e.preventDefault(); setActiveRoute('debts'); return; }
+        if (k === 'r') { e.preventDefault(); setActiveRoute('reminders'); return; }
+        if (k === 'p') { e.preventDefault(); setActiveRoute('planner'); return; }
+        if (k === 'n') { e.preventDefault(); setActiveRoute('notes'); return; }
+        if (k === 'v') { e.preventDefault(); setActiveRoute('vault'); return; }
+        if (k === 'b') { e.preventDefault(); setActiveRoute('habits'); return; }
+        if (k === 'f') { e.preventDefault(); setActiveRoute('finance'); return; }
+        if (k === 's') { e.preventDefault(); setActiveRoute('settings'); return; }
+      }
+
+      // Quick capture 'c' or 'C'
+      if ((e.key === 'c' || e.key === 'C') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.clearTimeout(pendingGTimer);
+    };
+  }, [setActiveRoute, setCommandPaletteOpen]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, [activeRoute]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => {
+      dismissToast();
+    }, toast.onUndo ? 7000 : 4500);
+    return () => window.clearTimeout(timer);
+  }, [toast, dismissToast]);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await authRepository.signInWithGoogle();
+      showToast('Signed in with Google. Cloud Firestore sync active.');
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code;
+      if (code === 'auth/unauthorized-domain') {
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+        showToast(`Add "${host}" to Firebase Console → Authentication → Settings → Authorized domains.`);
+      } else {
+        const msg = err instanceof Error ? err.message : 'Sign-in cancelled or failed.';
+        showToast(msg);
+      }
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await authRepository.signOut();
+      showToast('Signed out. Local offline workspace remains available.');
+    } catch {
+      showToast('Could not complete sign-out.');
+    }
+  };
+
+  const activeNavMeta = ALL_NAV_ITEMS.find((i) => i.id === activeRoute) ?? ALL_NAV_ITEMS[0];
+
+  return (
+    <div className="min-h-dvh flex bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+      {/* Desktop / Tablet Sidebar (260px, mirrors automatically in RTL via logical borders/spacing) */}
+      <aside className="hidden lg:flex lg:w-[260px] lg:shrink-0 lg:flex-col border-e border-[var(--border-hairline)] bg-[var(--bg-surface)] sticky top-0 h-dvh">
+        <div className="flex h-16 items-center justify-between px-5 border-b border-[var(--border-hairline)]">
+          <button
+            type="button"
+            onClick={() => setActiveRoute('home')}
+            className="flex items-center gap-2.5 text-start focus:outline-none"
+          >
+            <img
+              src="/logo.png"
+              alt="LifeOS"
+              className="h-7 w-7 rounded-lg shrink-0 object-contain"
+            />
+            <span className="font-display text-lg font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap">
+              {t('appName')}
+            </span>
+          </button>
+          {pinEnabled && (
+            <button
+              type="button"
+              aria-label={t('settings.pinLockNowBtn')}
+              onClick={lockApp}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <Lock className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
+          {ALL_NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeRoute === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveRoute(item.id)}
+                className={`w-full min-h-[42px] flex items-center justify-between gap-3 rounded-xl px-3.5 py-2 text-sm font-medium btn-spring transition-colors ${
+                  isActive
+                    ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                <span className="flex items-center gap-3 truncate">
+                  <Icon className="h-[18px] w-[18px] shrink-0" />
+                  <span className="truncate">{t(item.labelKey)}</span>
+                </span>
+                {item.phase && (
+                  <span className="font-numeric text-[11px] text-[var(--text-muted)] shrink-0">
+                    P{item.phase}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Account & Install Footer */}
+        <div className="border-t border-[var(--border-hairline)] p-4 space-y-3">
+          <PWAInstallButton />
+
+          {authUser ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate text-xs font-semibold text-[var(--text-primary)]">
+                  {authUser.displayName}
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-muted)]">
+                  <Cloud className="h-3 w-3 text-[var(--accent)] shrink-0" />
+                  <span className="truncate">{t('common.syncedCloudMode')}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label={t('common.signOut')}
+                onClick={() => void handleSignOut()}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleGoogleSignIn()}
+              className="w-full min-h-[42px] inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors whitespace-nowrap"
+            >
+              <LogIn className="h-4 w-4 text-[var(--accent)]" />
+              <span>{t('common.signInGoogle')}</span>
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content Column */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Bar: Compact 52px on mobile, 64px 3-zone header on desktop */}
+        <header className="sticky top-0 z-30 h-[52px] lg:h-16 border-b border-[var(--border-hairline)] bg-[var(--bg-surface)]/90 backdrop-blur-md px-3 sm:px-4 lg:px-8 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            {/* Mobile Burger Menu Button */}
+            <button
+              type="button"
+              aria-label="Open navigation menu"
+              onClick={() => setMobileMoreOpen(true)}
+              className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring shrink-0"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
+            <img
+              src="/logo.png"
+              alt="LifeOS"
+              className="h-6 w-6 rounded-md lg:hidden shrink-0 object-contain"
+            />
+            <span className="text-sm font-medium text-[var(--text-muted)] hidden lg:inline whitespace-nowrap">
+              {t('appName')}
+            </span>
+            <span aria-hidden="true" className="hidden lg:inline text-[var(--text-muted)]">
+              /
+            </span>
+            <span className="text-sm lg:text-base font-semibold text-[var(--text-primary)] truncate">
+              {t(activeNavMeta.labelKey)}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setCommandPaletteOpen(true)}
+              className="inline-flex min-h-[38px] sm:min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
+            >
+              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
+              <span>{t('common.quickAction')}</span>
+              <kbd className="hidden sm:inline font-numeric text-[11px] opacity-80 ms-1">⌘K</kbd>
+            </button>
+          </div>
+        </header>
+
+        {/* Real Offline Connectivity Notice */}
+        {!isOnline && (
+          <div
+            role="status"
+            className="bg-amber-600 px-4 py-2 text-xs font-medium text-white flex items-center justify-center gap-2"
+          >
+            <CloudOff className="h-3.5 w-3.5 shrink-0" />
+            <span>{t('common.offlineBanner')}</span>
+          </div>
+        )}
+
+        {/* Main Scrollable Viewport */}
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-10 anim-spring-in" key={activeRoute}>
+          {children}
+        </main>
+      </div>
+
+      {/* Mobile Bottom Tab Bar (60px height; combined with 52px header = 112px <= 15% of 844px) */}
+      <nav
+        aria-label="Mobile navigation"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 h-[60px] pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md grid grid-cols-5 items-center"
+      >
+        {MOBILE_PRIMARY_TABS.map((tabId) => {
+          const item = ALL_NAV_ITEMS.find((i) => i.id === tabId)!;
+          const Icon = item.icon;
+          const isActive = activeRoute === tabId;
+          return (
+            <button
+              key={tabId}
+              type="button"
+              onClick={() => setActiveRoute(tabId)}
+              className={`min-h-[44px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+                isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="truncate max-w-[64px]">{t(item.labelKey)}</span>
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => setMobileMoreOpen(true)}
+          className={`min-h-[44px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
+            mobileMoreOpen || activeRoute === 'settings'
+              ? 'text-[var(--accent)]'
+              : 'text-[var(--text-muted)]'
+          }`}
+        >
+          <LayoutGrid className="h-5 w-5" />
+          <span>{t('nav.more')}</span>
+        </button>
+      </nav>
+
+      {/* Mobile Drawer (Clean, elegant, full module navigation) */}
+      {mobileMoreOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+          className="lg:hidden fixed inset-0 z-50 flex items-end bg-slate-950/60 backdrop-blur-xs anim-modal-backdrop"
+          onClick={() => setMobileMoreOpen(false)}
+        >
+          <div
+            className="w-full max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5 pb-8 space-y-4 anim-bottom-sheet"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto h-1.5 w-12 rounded-full bg-[var(--border-hairline)]" />
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <img src="/logo.png" alt="LifeOS" className="h-7 w-7 rounded-lg shrink-0 object-contain" />
+                <div>
+                  <h2 className="text-base font-bold text-[var(--text-primary)]">{t('appName')}</h2>
+                  <p className="text-[11px] text-[var(--text-muted)]">Personal Life Command Center</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label={t('common.close')}
+                onClick={() => setMobileMoreOpen(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-primary)] btn-spring"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* All 9 Modules in a Clean 3x3 Grid */}
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2 px-1">
+                Modules
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {ALL_NAV_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeRoute === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveRoute(item.id);
+                        setMobileMoreOpen(false);
+                      }}
+                      className={`min-h-[68px] flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-2.5 text-center transition-colors btn-spring ${
+                        isActive
+                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-xs'
+                          : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                      <span className="text-xs font-medium truncate w-full">{t(item.labelKey)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Account & App Actions */}
+            <div className="pt-3 border-t border-[var(--border-hairline)] space-y-2.5">
+              <PWAInstallButton />
+              
+              {authUser ? (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-[var(--bg-canvas)] border border-[var(--border-hairline)]">
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                      {authUser.displayName}
+                    </div>
+                    <div className="text-[11px] text-[var(--text-muted)] truncate">
+                      {authUser.email}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMoreOpen(false);
+                      void handleSignOut();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--border-hairline)] text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] btn-spring"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    <span>{t('common.signOut')}</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMoreOpen(false);
+                    void handleGoogleSignIn();
+                  }}
+                  className="min-h-[44px] w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white btn-spring"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span>{t('common.signInGoogle')}</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Undo / Feedback Toast */}
+      {toast && (
+        <div
+          role="status"
+          className="anim-toast-enter fixed bottom-20 lg:bottom-6 end-4 z-50 flex items-center gap-3 rounded-xl border border-[var(--border-hairline)] bg-slate-900 dark:bg-slate-800 px-4 py-3 text-xs font-medium text-white shadow-lg max-w-sm"
+        >
+          <span>{toast.message}</span>
+          {toast.onUndo && (
+            <button
+              type="button"
+              onClick={() => {
+                toast.onUndo?.();
+                dismissToast();
+              }}
+              className="text-emerald-400 hover:text-emerald-300 font-semibold whitespace-nowrap"
+            >
+              {toast.undoLabel}
+            </button>
+          )}
+          <button
+            type="button"
+            aria-label="Dismiss notification"
+            onClick={dismissToast}
+            className="text-slate-400 hover:text-white"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};

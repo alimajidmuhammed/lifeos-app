@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>LifeOS — Personal Life Operating System</title>
+    <meta
+      name="description"
+      content="Offline-first, privacy-hardened personal life operating system for debts, reminders, tasks, notes, secure vault, habits, and finances with gated AI."
+    />
+    <meta property="og:title" content="LifeOS — Personal Life Operating System" />
+    <meta
+      property="og:description"
+      content="Offline-first, privacy-hardened personal life operating system for debts, reminders, tasks, notes, secure vault, habits, and finances with gated AI."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#059669" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="LifeOS" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Zero-flash theme & RTL boot from local preference cache
+      (function () {
+        try {
+          var theme = localStorage.getItem('lifeos_theme') || 'light';
+          var lang = localStorage.getItem('lifeos_lang') || 'en';
+          var root = document.documentElement;
+          root.classList.remove('dark', 'amoled');
+          if (theme === 'dark') root.classList.add('dark');
+          if (theme === 'amoled') root.classList.add('dark', 'amoled');
+          root.lang = lang;
+          root.dir = lang === 'ar' || lang === 'ckb' ? 'rtl' : 'ltr';
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[var(--bg-canvas)] text-[var(--text-primary)] antialiased selection:bg-emerald-500/20 selection:text-emerald-700 dark:selection:text-emerald-300">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

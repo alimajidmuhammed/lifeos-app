@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+dev-dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.vapid-keys.json
+.push-store.json
+.github/workflows/

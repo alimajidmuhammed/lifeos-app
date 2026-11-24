@@ -3,7 +3,6 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged as fbOnAuthStateChanged,
   signInWithPopup,
-  signInWithRedirect,
   signOut as fbSignOut,
   type User,
 } from 'firebase/auth';
@@ -70,13 +69,8 @@ export class FirebaseWebAuthRepository implements AuthRepository {
       return mapFirebaseUser(credential.user);
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code ?? '';
-      if (
-        code === 'auth/popup-blocked' ||
-        code === 'auth/operation-not-supported-in-this-environment' ||
-        code === 'auth/web-storage-unsupported'
-      ) {
-        await signInWithRedirect(auth, provider);
-        throw new Error('Redirecting to Google Sign-In...');
+      if (code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked by your browser. Please allow popups for this site and tap Sign in again.');
       }
       throw err;
     }

@@ -77,18 +77,35 @@ async function getOrCreateWebPushSubscription(): Promise<PushSubscription | null
     return null;
   }
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const existing = await reg.pushManager.getSubscription();
-    if (existing) return existing;
+    let reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    }
+    await navigator.serviceWorker.ready;
 
     const resp = await fetch('/api/push/vapid-public-key');
     if (!resp.ok) return null;
     const { publicKey } = (await resp.json()) as { publicKey?: string };
     if (!publicKey) return null;
 
+    const targetKey = urlBase64ToUint8Array(publicKey);
+    const existing = await reg.pushManager.getSubscription();
+    if (existing) {
+      // If Render redeployed with new ephemeral VAPID keys, re-subscribe cleanly
+      const existingKey = existing.options?.applicationServerKey
+        ? new Uint8Array(existing.options.applicationServerKey)
+        : null;
+      const keysMatch =
+        existingKey &&
+        existingKey.length === targetKey.length &&
+        existingKey.every((b, i) => b === targetKey[i]);
+      if (keysMatch) return existing;
+      await existing.unsubscribe().catch(() => {});
+    }
+
     return await reg.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
+      applicationServerKey: targetKey,
     });
   } catch {
     return null;

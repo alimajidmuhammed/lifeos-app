@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  Bell,
   Check,
   Clock,
   Edit3,
@@ -193,6 +194,31 @@ export const RemindersView: React.FC = () => {
           <button
             type="button"
             onClick={() => {
+              if (notifPermission === 'granted') {
+                handleSendTest();
+              } else {
+                void handleRequestNotif();
+              }
+            }}
+            className={`inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
+              notifPermission === 'granted'
+                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15'
+                : 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20'
+            }`}
+          >
+            <Bell className="h-4 w-4" />
+            <span>
+              {notifPermission === 'granted'
+                ? 'Test Push Alert'
+                : notifPermission === 'denied'
+                  ? 'Alerts Blocked'
+                  : 'Enable Phone Alerts'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
               setEditingReminder(null);
               setFormFocusAi(true);
               setFormOpen(true);
@@ -217,6 +243,12 @@ export const RemindersView: React.FC = () => {
           </button>
         </div>
       </section>
+
+      {notifPermission === 'unsupported' && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-200">
+          <strong>On iPhone / iPad:</strong> Apple requires installing the app first. Tap <strong>Share → Add to Home Screen</strong>, then open LifeOS from your Home Screen icon to enable lock-screen notifications.
+        </div>
+      )}
 
       {/* 4-Column Flat KPI Strip */}
       <section

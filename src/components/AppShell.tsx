@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Bell,
   BookText,
   CheckSquare,
+  ChevronLeft,
   Cloud,
   CloudOff,
   Flame,
@@ -52,6 +53,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { t } = useTranslation();
   const activeRoute = useUIStore((s) => s.activeRoute);
   const setActiveRoute = useUIStore((s) => s.setActiveRoute);
+  const goBackRoute = useUIStore((s) => s.goBackRoute);
+  const commandPaletteOpen = useUIStore((s) => s.commandPaletteOpen);
   const setCommandPaletteOpen = useUIStore((s) => s.setCommandPaletteOpen);
   const mobileMoreOpen = useUIStore((s) => s.mobileMoreOpen);
   const setMobileMoreOpen = useUIStore((s) => s.setMobileMoreOpen);
@@ -63,6 +66,110 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const showToast = useUIStore((s) => s.showToast);
 
   const isOnline = useOnlineStatus();
+
+  // ── Left-Edge Swipe-Back Gesture (works on Mobile Touch & Web Pointer) ──
+  const [swipeProgress, setSwipeProgress] = useState(0); // 0..1
+  const swipeStateRef = useRef<{
+    active: boolean;
+    startX: number;
+    startY: number;
+    lockedAxis: 'none' | 'horizontal' | 'vertical';
+  }>({ active: false, startX: 0, startY: 0, lockedAxis: 'none' });
+
+  useEffect(() => {
+    const EDGE_PX = 36;
+    const TRIGGER_PX = 76;
+
+    const triggerBackAction = () => {
+      void hapticLight();
+      if (mobileMoreOpen) {
+        setMobileMoreOpen(false);
+        return;
+      }
+      if (commandPaletteOpen) {
+        setCommandPaletteOpen(false);
+        return;
+      }
+      if (!goBackRoute() && window.history.length > 1) {
+        window.history.back();
+      }
+    };
+
+    const onStart = (x: number, y: number) => {
+      if (x <= EDGE_PX) {
+        swipeStateRef.current = { active: true, startX: x, startY: y, lockedAxis: 'none' };
+      }
+    };
+
+    const onMove = (x: number, y: number) => {
+      const st = swipeStateRef.current;
+      if (!st.active) return;
+      const dx = x - st.startX;
+      const dy = Math.abs(y - st.startY);
+
+      if (st.lockedAxis === 'none') {
+        if (Math.abs(dx) > 10 || dy > 10) {
+          st.lockedAxis = dx > dy * 1.25 ? 'horizontal' : 'vertical';
+        }
+      }
+      if (st.lockedAxis === 'vertical') {
+        st.active = false;
+        setSwipeProgress(0);
+        return;
+      }
+      if (st.lockedAxis === 'horizontal' && dx > 0) {
+        setSwipeProgress(Math.min(1, dx / TRIGGER_PX));
+      }
+    };
+
+    const onEnd = (x: number) => {
+      const st = swipeStateRef.current;
+      if (!st.active) return;
+      const dx = x - st.startX;
+      const shouldTrigger = st.lockedAxis === 'horizontal' && dx >= TRIGGER_PX;
+      st.active = false;
+      setSwipeProgress(0);
+      if (shouldTrigger) {
+        triggerBackAction();
+      }
+    };
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      onStart(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      onMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      if (touch) onEnd(touch.clientX);
+    };
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      onStart(e.clientX, e.clientY);
+    };
+    const handleMouseMove = (e: MouseEvent) => onMove(e.clientX, e.clientY);
+    const handleMouseUp = (e: MouseEvent) => onEnd(e.clientX);
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [mobileMoreOpen, commandPaletteOpen, setMobileMoreOpen, setCommandPaletteOpen, goBackRoute]);
 
   // ── Global Keyboard Shortcuts ──
   useEffect(() => {
@@ -356,7 +463,29 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </main>
       </div>
 
-      {/* Mobile Quick-Action Floating Action Button (thumb-friendly) */}
+      {/* Left-Edge Swipe-Back Visual Indicator */}
+      {swipeProgress > 0.08 && (
+        <div
+          aria-hidden="true"
+          className="fixed top-1/2 start-0 z-[70] -translate-y-1/2 pointer-events-none transition-transform duration-75"
+          style={{
+            transform: `translate(${Math.round(swipeProgress * 22)}px, -50%) scale(${0.8 + swipeProgress * 0.25})`,
+            opacity: Math.min(1, swipeProgress * 1.2),
+          }}
+        >
+          <div
+            className={`h-11 w-11 rounded-full border shadow-lg flex items-center justify-center backdrop-blur-md transition-colors ${
+              swipeProgress >= 1
+                ? 'bg-[var(--accent)] border-[var(--accent)] text-white'
+                : 'bg-[var(--bg-surface)]/95 border-[var(--border-hairline)] text-[var(--text-primary)]'
+            }`}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Quick-Action Floating Action Button (cleanly above bottom navbar + safe-area) */}
       <button
         type="button"
         aria-label={t('common.quickAction')}
@@ -364,7 +493,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           void hapticMedium();
           setCommandPaletteOpen(true);
         }}
-        className="sm:hidden fixed bottom-[76px] end-4 z-30 h-13 w-13 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center hover:bg-[var(--accent-hover)] btn-spring"
+        className="sm:hidden fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] end-4 z-30 h-13 w-13 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center hover:bg-[var(--accent-hover)] btn-spring"
       >
         <Plus className="h-6 w-6" />
       </button>

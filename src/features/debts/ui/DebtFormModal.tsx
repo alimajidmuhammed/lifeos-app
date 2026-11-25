@@ -217,11 +217,11 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={isEditing ? t('debts.editDebt') : t('debts.addDebt')}
-      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-950/60 backdrop-blur-xs p-3 pt-4 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-950/60 backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-xl"
+        className="w-full sm:max-w-lg max-h-[90dvh] overflow-y-auto rounded-b-3xl sm:rounded-2xl pt-safe border-b sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-xl anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--border-hairline)] bg-[var(--bg-surface)] px-5 py-4">

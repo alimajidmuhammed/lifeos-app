@@ -80,6 +80,7 @@ export function hashPinQuick(pin: string): string {
 
 interface UIState {
   activeRoute: NavRoute;
+  routeHistory: NavRoute[];
   commandPaletteOpen: boolean;
   mobileMoreOpen: boolean;
   authReady: boolean;
@@ -92,6 +93,7 @@ interface UIState {
   toast: ToastMessage | null;
 
   setActiveRoute: (route: NavRoute) => void;
+  goBackRoute: () => boolean;
   setCommandPaletteOpen: (open: boolean) => void;
   setMobileMoreOpen: (open: boolean) => void;
   setAuthState: (user: AuthUserSummary | null, ready: boolean) => void;
@@ -192,6 +194,7 @@ if (typeof document !== 'undefined') {
 
 export const useUIStore = create<UIState>((set, get) => ({
   activeRoute: 'home',
+  routeHistory: [],
   commandPaletteOpen: false,
   mobileMoreOpen: false,
   authReady: false,
@@ -205,7 +208,28 @@ export const useUIStore = create<UIState>((set, get) => ({
   density: initialDensity,
   fontScale: initialFontSize,
 
-  setActiveRoute: (route) => set({ activeRoute: route, mobileMoreOpen: false }),
+  setActiveRoute: (route) => {
+    const { activeRoute, routeHistory } = get();
+    if (route === activeRoute) {
+      set({ mobileMoreOpen: false });
+      return;
+    }
+    const nextHistory = [...routeHistory, activeRoute].slice(-15);
+    set({ activeRoute: route, routeHistory: nextHistory, mobileMoreOpen: false });
+  },
+  goBackRoute: () => {
+    const { activeRoute, routeHistory } = get();
+    if (routeHistory.length > 0) {
+      const prev = routeHistory[routeHistory.length - 1];
+      set({ activeRoute: prev, routeHistory: routeHistory.slice(0, -1), mobileMoreOpen: false });
+      return true;
+    }
+    if (activeRoute !== 'home') {
+      set({ activeRoute: 'home', mobileMoreOpen: false });
+      return true;
+    }
+    return false;
+  },
   setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
   setMobileMoreOpen: (open) => set({ mobileMoreOpen: open }),
 

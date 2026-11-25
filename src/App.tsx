@@ -35,7 +35,11 @@ function LifeOSWorkspace() {
         activeRoute: s.activeRoute,
         closeCommandPalette: () => s.setCommandPaletteOpen(false),
         closeMobileMore: () => s.setMobileMoreOpen(false),
-        goHome: () => s.setActiveRoute('home'),
+        goHome: () => {
+          if (!s.goBackRoute()) {
+            s.setActiveRoute('home');
+          }
+        },
       };
     });
   }, []);

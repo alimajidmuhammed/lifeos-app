@@ -335,11 +335,11 @@ export const AICommandPalette: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-label={t('assistant.title')}
-      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/60 p-4 pt-10 sm:pt-16 backdrop-blur-xs overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/60 p-0 sm:p-4 sm:pt-16 backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-2xl rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] overflow-hidden"
+        className="w-full sm:max-w-2xl rounded-b-3xl sm:rounded-2xl pt-safe border-b sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-xl overflow-hidden max-h-[90dvh] overflow-y-auto anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

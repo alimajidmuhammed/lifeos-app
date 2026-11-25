@@ -719,6 +719,16 @@ export const SettingsView: React.FC = () => {
           <PWAInstallButton compact />
         </div>
       </section>
+
+      {/* 5. Keyboard Shortcuts Reference */}
+      <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-2">
+        <h2 className="text-base font-semibold text-[var(--text-primary)]">
+          {t('home.shortcutsTitle')}
+        </h2>
+        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+          {t('home.shortcutsDesc')}
+        </p>
+      </section>
     </div>
   );
 };

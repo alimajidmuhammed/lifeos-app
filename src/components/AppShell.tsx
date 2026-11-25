@@ -4,6 +4,7 @@ import {
   BookText,
   CheckSquare,
   ChevronLeft,
+  ChevronRight,
   Cloud,
   CloudOff,
   Flame,
@@ -66,6 +67,24 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const showToast = useUIStore((s) => s.showToast);
 
   const isOnline = useOnlineStatus();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('lifeos_sidebar_collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('lifeos_sidebar_collapsed', next ? '1' : '0');
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  };
   const { unreadCount } = useAllInboxNotifications();
   const notifOpen = useNotificationInboxStore((s) => s.open);
   const setNotifOpen = useNotificationInboxStore((s) => s.setOpen);
@@ -293,33 +312,49 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   return (
     <div className="min-h-dvh flex bg-[var(--bg-canvas)] text-[var(--text-primary)]">
-      {/* Desktop / Tablet Sidebar (260px, mirrors automatically in RTL via logical borders/spacing) */}
-      <aside className="hidden lg:flex lg:w-[260px] lg:shrink-0 lg:flex-col border-e border-[var(--border-hairline)] bg-[var(--bg-surface)] sticky top-0 h-dvh">
-        <div className="flex h-16 items-center justify-between px-5 border-b border-[var(--border-hairline)]">
+      {/* Desktop / Tablet Collapsible Sidebar (256px / 72px, mirrors in RTL via logical borders/spacing) */}
+      <aside
+        className={`hidden lg:flex lg:shrink-0 lg:flex-col border-e border-[var(--border-hairline)] bg-[var(--bg-surface)] sticky top-0 h-dvh transition-[width] duration-200 ${
+          sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-[256px]'
+        }`}
+      >
+        <div className="flex h-16 items-center justify-between px-4 border-b border-[var(--border-hairline)]">
           <button
             type="button"
             onClick={() => setActiveRoute('home')}
-            className="flex items-center gap-2.5 text-start focus:outline-none"
+            className="flex items-center gap-2.5 text-start focus:outline-none min-w-0"
           >
             <img
               src="/logo.png"
               alt="LifeOS"
               className="h-7 w-7 rounded-lg shrink-0 object-contain"
             />
-            <span className="font-display text-lg font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap">
-              {t('appName')}
-            </span>
+            {!sidebarCollapsed && (
+              <span className="font-display text-lg font-bold tracking-tight text-[var(--text-primary)] whitespace-nowrap truncate">
+                {t('appName')}
+              </span>
+            )}
           </button>
-          {pinEnabled && (
+          <div className="flex items-center gap-1 shrink-0">
+            {pinEnabled && !sidebarCollapsed && (
+              <button
+                type="button"
+                aria-label={t('settings.pinLockNowBtn')}
+                onClick={lockApp}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                <Lock className="h-4 w-4" />
+              </button>
+            )}
             <button
               type="button"
-              aria-label={t('settings.pinLockNowBtn')}
-              onClick={lockApp}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={toggleSidebar}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] transition-colors"
             >
-              <Lock className="h-4 w-4" />
+              {sidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
-          )}
+          </div>
         </div>
 
         <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
@@ -330,22 +365,20 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               <button
                 key={item.id}
                 type="button"
+                title={sidebarCollapsed ? t(item.labelKey) : undefined}
                 onClick={() => setActiveRoute(item.id)}
-                className={`w-full min-h-[42px] flex items-center justify-between gap-3 rounded-xl px-3.5 py-2 text-sm font-medium btn-spring transition-colors ${
+                className={`w-full min-h-[44px] flex items-center ${
+                  sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-3.5'
+                } gap-3 rounded-xl py-2 text-sm font-medium btn-spring transition-colors ${
                   isActive
-                    ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                    ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-semibold'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 <span className="flex items-center gap-3 truncate">
-                  <Icon className="h-[18px] w-[18px] shrink-0" />
-                  <span className="truncate">{t(item.labelKey)}</span>
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!sidebarCollapsed && <span className="truncate">{t(item.labelKey)}</span>}
                 </span>
-                {item.phase && (
-                  <span className="font-numeric text-[11px] text-[var(--text-muted)] shrink-0">
-                    P{item.phase}
-                  </span>
-                )}
               </button>
             );
           })}
@@ -470,8 +503,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         )}
 
-        {/* Main Scrollable Viewport */}
-        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-10 anim-spring-in" key={activeRoute}>
+        {/* Main Scrollable Viewport (max-w-1200px desktop, safe bottom padding on mobile) */}
+        <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-5 lg:py-8 pb-[calc(76px+env(safe-area-inset-bottom,0px))] lg:pb-10 anim-spring-in" key={activeRoute}>
           {children}
         </main>
       </div>
@@ -498,12 +531,12 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </div>
       )}
 
-      {/* Mobile Bottom Tab Bar (Material 3 / iOS-style active pill + safe-area) */}
+      {/* Mobile Bottom Tab Bar (56px height + safe-area, active pill + bold label) */}
       <nav
         aria-label="Mobile navigation"
         className="mobile-bottom-nav lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md"
       >
-        <div className="h-[62px] grid grid-cols-5 items-center px-1">
+        <div className="h-[56px] grid grid-cols-5 items-center px-1">
         {MOBILE_PRIMARY_TABS.map((tabId) => {
           const item = ALL_NAV_ITEMS.find((i) => i.id === tabId)!;
           const Icon = item.icon;

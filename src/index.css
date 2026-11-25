@@ -7,17 +7,24 @@
   --bg-subtle: #F1F5F9;
   --border-hairline: #E2E8F0;
   --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
+  --text-secondary: #334155;
+  --text-muted: #4E5D70; /* >= 6.3:1 on #FFFFFF & #F8FAFC (WCAG AA) */
   --accent: #059669;
   --accent-hover: #047857;
   --accent-soft: #ECFDF5;
-  --status-ok: #16A34A;
-  --status-warn: #D97706;
-  --status-danger: #DC2626;
+  --status-ok: #15803D;
+  --status-ok-soft: #DCFCE7;
+  --status-warn: #B45309;
+  --status-warn-soft: #FEF3C7;
+  --status-danger: #B91C1C;
+  --status-danger-soft: #FEE2E2;
   --font-display: 'Plus Jakarta Sans', 'IBM Plex Sans Arabic', system-ui, sans-serif;
   --font-body: 'DM Sans', 'IBM Plex Sans Arabic', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* ── Elevation (max 2 levels) ── */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-float: 0 12px 28px -8px rgba(15, 23, 42, 0.14);
 
   /* ── Motion Physics ── */
   --spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
@@ -25,14 +32,14 @@
   --spring-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
   --duration-fast: 150ms;
-  --duration-normal: 250ms;
-  --duration-enter: 350ms;
-  --duration-exit: 200ms;
+  --duration-normal: 200ms;
+  --duration-enter: 250ms;
+  --duration-exit: 180ms;
 
   /* ── Density (Comfortable default) ── */
   --row-height: 56px;
   --row-height-compact: 36px;
-  --card-padding: 1.5rem;
+  --card-padding: 1.25rem;
   --card-padding-compact: 0.75rem;
   --list-gap: 0.625rem;
   --list-gap-compact: 0.25rem;
@@ -45,10 +52,18 @@
   --border-hairline: #1E293B;
   --text-primary: #F1F5F9;
   --text-secondary: #CBD5E1;
-  --text-muted: #94A3B8;
+  --text-muted: #9FB0C7; /* >= 6.8:1 on #131C31 (WCAG AA) */
   --accent: #10B981;
   --accent-hover: #34D399;
   --accent-soft: rgba(16, 185, 129, 0.14);
+  --status-ok: #4ADE80;
+  --status-ok-soft: rgba(34, 197, 94, 0.14);
+  --status-warn: #FBBF24;
+  --status-warn-soft: rgba(245, 158, 11, 0.14);
+  --status-danger: #F87171;
+  --status-danger-soft: rgba(239, 68, 68, 0.14);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-float: 0 12px 28px -8px rgba(0, 0, 0, 0.5);
 }
 
 .dark.amoled {
@@ -58,7 +73,7 @@
   --border-hairline: #1F2937;
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
-  --text-muted: #94A3B8;
+  --text-muted: #A3B3C9; /* >= 8.5:1 on #0B0F17 (WCAG AA) */
   --accent: #10B981;
   --accent-hover: #34D399;
   --accent-soft: rgba(16, 185, 129, 0.16);
@@ -104,6 +119,34 @@ h1, h2, h3, .font-display {
 .font-numeric {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+}
+
+/* Proportional UI figures for large hero/KPI numbers (never terminal monospace) */
+.tabular-nums-ui {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Accessible keyboard focus ring everywhere */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Prevent iOS zoom on input focus */
+@media (max-width: 639px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Hide scrollbars on horizontal quick-capture chip strip */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .pt-safe {

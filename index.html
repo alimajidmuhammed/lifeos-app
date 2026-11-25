@@ -33,13 +33,13 @@
       (function () {
         try {
           var theme = localStorage.getItem('lifeos_theme') || 'light';
-          var lang = localStorage.getItem('lifeos_lang') || 'en';
+          var lang = localStorage.getItem('lifeos_locale') || 'en';
           var root = document.documentElement;
           root.classList.remove('dark', 'amoled');
           if (theme === 'dark') root.classList.add('dark');
           if (theme === 'amoled') root.classList.add('dark', 'amoled');
           root.lang = lang;
-          root.dir = lang === 'ar' || lang === 'ckb' ? 'rtl' : 'ltr';
+          root.dir = (lang === 'ar' || lang === 'ckb' || lang === 'kmr' || lang === 'fa') ? 'rtl' : 'ltr';
         } catch (e) {}
       })();
     </script>

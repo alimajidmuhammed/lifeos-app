@@ -283,7 +283,7 @@ export const HabitsView: React.FC = () => {
           <div className="mt-2 font-numeric text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">
             {summary.bestActiveStreak}d
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">Current leading streak</div>
+          <div className="mt-1 text-xs text-[var(--text-muted)]">{t('ui.currentLeadingStreak')}</div>
         </div>
 
         <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
@@ -359,7 +359,7 @@ export const HabitsView: React.FC = () => {
                   onChange={(e) => setShowArchived(e.target.checked)}
                   className="h-3.5 w-3.5 rounded accent-emerald-600"
                 />
-                <span>Show archived</span>
+                <span>{t('ui.showArchived')}</span>
               </label>
             )}
           </div>

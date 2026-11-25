@@ -50,10 +50,10 @@ self.addEventListener('push', (event: PushEvent) => {
   try {
     payload = event.data ? (event.data.json() as PushPayload) : {};
   } catch {
-    payload = { body: event.data?.text() || 'Reminder due in LifeOS.' };
+    payload = { body: event.data?.text() || 'Reminder due in LifeinOne.' };
   }
 
-  const title = payload.title || 'LifeOS Smart Reminder';
+  const title = payload.title || 'LifeinOne Smart Reminder';
   const options: NotificationOptions & { vibrate?: number[] } = {
     body: payload.body || 'You have a scheduled reminder.',
     icon: '/pwa-192x192.png',

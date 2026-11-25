@@ -170,7 +170,7 @@ export const RemindersView: React.FC = () => {
     } else if (res === 'denied') {
       showToast(
         isNativePlatform()
-          ? 'Notifications blocked in Phone Settings → Apps → LifeOS.'
+          ? 'Notifications blocked in Phone Settings → Apps → LifeinOne.'
           : 'Browser notifications were blocked in site settings.'
       );
     }
@@ -200,7 +200,7 @@ export const RemindersView: React.FC = () => {
             <span>{isCloudSynced ? t('common.syncedCloudMode') : t('common.offlineLocalMode')}</span>
             <span aria-hidden="true"> · </span>
             <span className="font-numeric">
-              Quiet Hours {quietHours.startHHMM}–{quietHours.endHHMM}
+              {t('ui.quietHoursLabel')} {quietHours.startHHMM}–{quietHours.endHHMM}
             </span>
           </p>
           <h1 className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -219,7 +219,7 @@ export const RemindersView: React.FC = () => {
               className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 transition-colors whitespace-nowrap"
             >
               <Bell className="h-4 w-4" />
-              <span>{isNativePlatform() ? 'Test Native Alert' : 'Test Push Alert'}</span>
+              <span>{isNativePlatform() ? t('ui.testNativeAlert') : t('ui.testPushAlert')}</span>
             </button>
           ) : notifPermission === 'denied' ? (
             <button
@@ -228,7 +228,7 @@ export const RemindersView: React.FC = () => {
               className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
             >
               <Bell className="h-4 w-4" />
-              <span>Alerts Off</span>
+              <span>{t('ui.alertsOff')}</span>
             </button>
           ) : null}
 
@@ -262,7 +262,7 @@ export const RemindersView: React.FC = () => {
 
       {notifPermission === 'unsupported' && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-200">
-          <strong>On iPhone / iPad:</strong> Apple requires installing the app first. Tap <strong>Share → Add to Home Screen</strong>, then open LifeOS from your Home Screen icon to enable lock-screen notifications.
+          <strong>On iPhone / iPad:</strong> Apple requires installing the app first. Tap <strong>Share → Add to Home Screen</strong>, then open LifeinOne from your Home Screen icon to enable lock-screen notifications.
         </div>
       )}
 

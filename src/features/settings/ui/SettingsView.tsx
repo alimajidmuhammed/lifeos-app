@@ -284,21 +284,21 @@ export const SettingsView: React.FC = () => {
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <LayoutTemplate className="h-4 w-4 text-[var(--accent)]" />
-              <span>Display Density</span>
+              <span>{t('ui.displayDensity')}</span>
             </h2>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-              Choose between comfortable touch targets (56px) and high-density spreadsheet view (36px).
+              {t('ui.displayDensityDesc')}
             </p>
           </div>
           <div
             role="group"
-            aria-label="Display Density"
+            aria-label={t('ui.displayDensity')}
             className="inline-flex items-center gap-1 rounded-xl bg-[var(--bg-subtle)] p-1"
           >
             {(
               [
-                { id: 'comfortable', label: 'Comfortable (56px)' },
-                { id: 'compact', label: 'Compact (36px)' },
+                { id: 'comfortable', label: t('ui.comfortableDensity') },
+                { id: 'compact', label: t('ui.compactDensity') },
               ] as const
             ).map((opt) => {
               const active = density === opt.id;
@@ -328,7 +328,7 @@ export const SettingsView: React.FC = () => {
               {t('home.displayNameLabel')}
             </h2>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-              Shown in your Home screen greeting.
+              {t('ui.displayNameDesc')}
             </p>
           </div>
           <form
@@ -362,10 +362,10 @@ export const SettingsView: React.FC = () => {
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Type className="h-4 w-4 text-[var(--accent)]" />
-              <span>Font Scale ({fontScale}%)</span>
+              <span>{t('ui.fontScaleTitle')} ({fontScale}%)</span>
             </h2>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-              Adjust typography size safely across LifeinOne without distorting layouts or breaking touch targets.
+              {t('ui.fontScaleDesc')}
             </p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-64">
@@ -612,10 +612,10 @@ export const SettingsView: React.FC = () => {
             <div>
               <h2 className="text-base font-semibold text-[var(--text-primary)] flex items-center gap-2">
                 <Fingerprint className="h-4 w-4 text-[var(--accent)]" />
-                <span>Device Biometrics (WebAuthn)</span>
+                <span>{t('ui.biometricsTitle')}</span>
               </h2>
               <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                Unlock LifeinOne using Touch ID, Face ID, or Windows Hello. Credentials remain strictly on-device.
+                {t('ui.biometricsDesc')}
               </p>
             </div>
             {webAuthnSupported ? (
@@ -623,14 +623,14 @@ export const SettingsView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Enrolled</span>
+                    <span>{t('ui.biometricsEnrolled')}</span>
                   </span>
                   <button
                     type="button"
                     onClick={handleRemoveBiometrics}
                     className="min-h-[38px] rounded-xl border border-[var(--border-hairline)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
                   >
-                    Remove
+                    {t('ui.biometricsRemove')}
                   </button>
                 </div>
               ) : (
@@ -641,11 +641,11 @@ export const SettingsView: React.FC = () => {
                   className="min-h-[40px] inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50 btn-spring whitespace-nowrap"
                 >
                   <Fingerprint className="h-4 w-4" />
-                  <span>{webAuthnBusy ? 'Enrolling...' : 'Enable Biometrics'}</span>
+                  <span>{webAuthnBusy ? t('ui.biometricsEnrolling') : t('ui.biometricsEnable')}</span>
                 </button>
               )
             ) : (
-              <span className="text-xs text-[var(--text-muted)]">Not supported on this browser</span>
+              <span className="text-xs text-[var(--text-muted)]">{t('ui.biometricsUnsupported')}</span>
             )}
           </div>
         </div>
@@ -675,7 +675,7 @@ export const SettingsView: React.FC = () => {
                   setPassphrase(e.target.value);
                   setE2eError('');
                 }}
-                placeholder="Enter a strong vault passphrase"
+                placeholder={t('ui.vaultPassphrasePlaceholder')}
                 className="mt-1 min-h-[42px] w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm text-[var(--text-primary)]"
               />
             </div>

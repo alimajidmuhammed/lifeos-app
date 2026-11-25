@@ -647,7 +647,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 <img src="/logo.png" alt="LifeinOne" className="h-7 w-7 rounded-lg shrink-0 object-contain" />
                 <div>
                   <h2 className="text-base font-bold text-[var(--text-primary)]">{t('appName')}</h2>
-                  <p className="text-[11px] text-[var(--text-muted)]">Personal Life Command Center</p>
+                  <p className="text-[11px] text-[var(--text-muted)]">{t('ui.tagline')}</p>
                 </div>
               </div>
               <button
@@ -663,7 +663,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             {/* All 9 Modules in a Clean 3x3 Grid */}
             <div>
               <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2 px-1">
-                Modules
+                {t('home.modulesTitle')}
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {ALL_NAV_ITEMS.map((item) => {

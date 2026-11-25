@@ -125,7 +125,7 @@ export const NoteSecurityModal: React.FC<NoteSecurityModalProps> = ({
                   <span>AES-256-GCM Zero-Knowledge Active</span>
                 </div>
                 <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                  Store this Recovery Key offline. Your passphrase never leaves this device and cannot be recovered by LifeOS or Firebase.
+                  Store this Recovery Key offline. Your passphrase never leaves this device and cannot be recovered by LifeinOne or Firebase.
                 </p>
                 <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-2.5">
                   <code className="font-numeric text-xs font-semibold text-[var(--text-primary)] break-all">

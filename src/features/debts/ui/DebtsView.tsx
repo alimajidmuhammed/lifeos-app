@@ -20,6 +20,7 @@ import {
 } from '../../../core/debts/debtEngine';
 import type { DebtDirection, DebtRecord } from '../../../core/debts/debtSchemas';
 import { useDebts } from '../../../hooks/useDebts';
+import { exportTextFileNativeOrWeb } from '../../../core/native/mobileBridge';
 import { useUIStore } from '../../../state/useUIStore';
 import { DebtFormModal } from './DebtFormModal';
 import { DebtPaymentModal } from './DebtPaymentModal';
@@ -111,15 +112,13 @@ export const DebtsView: React.FC = () => {
     showToast('Reference FX rates updated.');
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const csv = exportDebtsToCsv(debts, todayYmd);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lifeos-debts-${todayYmd}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await exportTextFileNativeOrWeb(
+      `lifeinone-debts-${todayYmd}.csv`,
+      csv,
+      'text/csv;charset=utf-8'
+    );
     showToast('Exported debts CSV.');
   };
 

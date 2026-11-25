@@ -173,18 +173,19 @@ export function registerNativeAppResumeListener(onResume: () => void): () => voi
 }
 
 /**
- * Exports a JSON string using native Filesystem + Share sheet on Android/iOS,
+ * Exports any text/JSON/CSV file using native Filesystem + Share sheet on Android/iOS,
  * falling back to a browser download blob on Web.
  */
-export async function exportJsonNativeOrWeb(
+export async function exportTextFileNativeOrWeb(
   filename: string,
-  jsonText: string
+  content: string,
+  mimeType = 'text/plain;charset=utf-8'
 ): Promise<'native' | 'web'> {
   if (isNativeApp()) {
     try {
       await Filesystem.writeFile({
         path: filename,
-        data: jsonText,
+        data: content,
         directory: Directory.Cache,
         encoding: Encoding.UTF8,
       });
@@ -194,9 +195,9 @@ export async function exportJsonNativeOrWeb(
       });
       await Share.share({
         title: filename,
-        text: 'LifeinOne Workspace Backup',
+        text: 'LifeinOne Export',
         url: uri,
-        dialogTitle: 'Export LifeinOne Backup',
+        dialogTitle: 'Export from LifeinOne',
       });
       return 'native';
     } catch {
@@ -204,7 +205,7 @@ export async function exportJsonNativeOrWeb(
     }
   }
 
-  const blob = new Blob([jsonText], { type: 'application/json' });
+  const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -212,6 +213,13 @@ export async function exportJsonNativeOrWeb(
   a.click();
   URL.revokeObjectURL(url);
   return 'web';
+}
+
+export async function exportJsonNativeOrWeb(
+  filename: string,
+  jsonText: string
+): Promise<'native' | 'web'> {
+  return exportTextFileNativeOrWeb(filename, jsonText, 'application/json');
 }
 
 export async function shareTextNativeOrWeb(title: string, text: string): Promise<boolean> {

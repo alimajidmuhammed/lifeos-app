@@ -70,5 +70,7 @@
 	<string>LifeinOne uses the camera to scan receipts and private documents locally into your encrypted Vault.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>LifeinOne uses your photo library to import document scans locally into your Vault.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>LifeinOne uses Face ID to unlock your private workspace and encrypted Vault.</string>
 </dict>
 </plist>

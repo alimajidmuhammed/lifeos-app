@@ -419,7 +419,7 @@ export const AICommandPalette: React.FC = () => {
             <span>{freeTier ? 'Privacy Gate: Free Tier Strict' : 'Paid Zero-Retention Tier'}</span>
             <span aria-hidden="true">·</span>
             <span className="font-numeric">
-              LifeOS Assistant · Function Calling
+              {t('ui.assistantHeader')}
             </span>
           </div>
           <div className="font-numeric text-[var(--text-secondary)]">
@@ -439,7 +439,7 @@ export const AICommandPalette: React.FC = () => {
             <div className="relative">
               <Search className="pointer-events-none absolute start-3.5 top-3.5 h-4 w-4 text-[var(--text-muted)]" />
               <label htmlFor="ai-command-input" className="sr-only">
-                Search workspace or ask LifeOS AI
+                {t('ui.assistantSearchTitle')}
               </label>
               <textarea
                 id="ai-command-input"
@@ -461,7 +461,7 @@ export const AICommandPalette: React.FC = () => {
                   onChange={(e) => setModuleFilter(e.target.value as 'all' | SearchModuleId)}
                   className="rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-2.5 py-1 text-xs text-[var(--text-primary)]"
                 >
-                  <option value="all">All 7 Modules</option>
+                  <option value="all">{t('ui.all7Modules')}</option>
                   {(Object.keys(MODULE_LABELS) as SearchModuleId[]).map((m) => (
                     <option key={m} value={m}>
                       {MODULE_LABELS[m]}
@@ -586,7 +586,7 @@ export const AICommandPalette: React.FC = () => {
                   <div className="mt-2 flex flex-wrap items-center gap-2 font-numeric text-xs text-[var(--text-muted)]">
                     <span>{result.meta.latencyMs}ms</span>
                     <span aria-hidden="true">·</span>
-                    <span>Deterministic on-device tool execution</span>
+                    <span>{t('ui.deterministicExec')}</span>
                   </div>
                 </div>
 
@@ -677,7 +677,7 @@ export const AICommandPalette: React.FC = () => {
                           onClick={() => void executeConfirmedAction(result.proposedAction!)}
                           className="min-h-[40px] rounded-lg bg-[var(--accent)] px-4 py-1.5 text-xs font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50 transition-colors"
                         >
-                          {executingAction ? 'Applying...' : t('common.confirm')}
+                          {executingAction ? t('ui.applying') : t('common.confirm')}
                         </button>
                         <button
                           type="button"

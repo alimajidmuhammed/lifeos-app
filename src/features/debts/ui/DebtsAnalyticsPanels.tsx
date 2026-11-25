@@ -108,7 +108,7 @@ export const PeopleLedgerPanel: React.FC<PeoplePanelProps> = ({
             <div className="flex items-center gap-4 shrink-0">
               <div className="text-end space-y-0.5">
                 {activeCurrencies.length === 0 ? (
-                  <span className="text-xs font-medium text-[var(--accent)]">All settled</span>
+                  <span className="text-xs font-medium text-[var(--accent)]">{t('ui.allSettled')}</span>
                 ) : (
                   activeCurrencies.map((c) => {
                     const net = person.netByCurrencyMinor[c];

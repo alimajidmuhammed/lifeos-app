@@ -319,7 +319,7 @@ export const NotesView: React.FC = () => {
     setAiResult(null);
 
     if (selectedNote.isLocked || selectedNote.isEncrypted) {
-      setAiError('Locked or E2E-encrypted notes are strictly blocked from AI processing by the LifeOS Privacy Gate.');
+      setAiError('Locked or E2E-encrypted notes are strictly blocked from AI processing by the LifeinOne Privacy Gate.');
       return;
     }
     if (!aiAllowed) {

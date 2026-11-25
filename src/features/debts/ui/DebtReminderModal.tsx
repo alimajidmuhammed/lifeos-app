@@ -157,7 +157,7 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-                Message Language
+                {t('ui.messageLanguage')}
               </span>
               <select
                 value={language}
@@ -179,7 +179,7 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
 
             <div>
               <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
-                Tone
+                {t('ui.toneLabel')}
               </span>
               <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[var(--bg-subtle)]">
                 {(
@@ -213,7 +213,7 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
             className="w-full min-h-[42px] inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
           >
             <Sparkles className="h-4 w-4" />
-            <span>{loading ? 'Drafting...' : t('debts.generateDraft')}</span>
+            <span>{loading ? t('ui.drafting') : t('debts.generateDraft')}</span>
           </button>
 
           {error && <p className="text-xs text-amber-700 dark:text-amber-300">{error}</p>}
@@ -230,7 +230,7 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
               rows={5}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Click Generate Draft above, or write your custom reminder message here..."
+              placeholder={t('ui.reminderDraftPlaceholder')}
               className="w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-3 text-sm leading-relaxed text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
             />
           </div>

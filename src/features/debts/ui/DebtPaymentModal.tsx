@@ -179,14 +179,14 @@ export const DebtPaymentModal: React.FC<DebtPaymentModalProps> = ({
               maxLength={500}
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Receipt number or transfer reference..."
+              placeholder={t('ui.receiptPlaceholder')}
               className="w-full min-h-[42px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 
           {/* Deterministic Preview Strip */}
           <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-4 py-3 flex items-center justify-between text-xs">
-            <span className="text-[var(--text-secondary)]">New remaining balance</span>
+            <span className="text-[var(--text-secondary)]">{t('ui.newRemainingBalance')}</span>
             <span
               className={`font-numeric font-semibold ${
                 isOverpay

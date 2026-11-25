@@ -347,7 +347,7 @@ export const VaultView: React.FC = () => {
               className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
             >
               <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              <span>Lock Session</span>
+              <span>{t('ui.lockSession')}</span>
             </button>
           )}
           <button
@@ -573,7 +573,7 @@ export const VaultView: React.FC = () => {
           <div className="pt-4 border-t border-[var(--border-hairline)] space-y-1.5 text-[11px] text-[var(--text-muted)]">
             <div className="flex items-center gap-1.5 font-semibold text-[var(--text-secondary)]">
               <HardDrive className="h-3.5 w-3.5 text-[var(--accent)]" />
-              <span>Local-Only Storage Mode</span>
+              <span>{t('ui.localOnlyStorage')}</span>
             </div>
             <p className="leading-relaxed">
               Document files stay in local IndexedDB (Spark free tier · $0). Cloud Storage sync requires upgrading Firebase to Blaze with budget alerts.
@@ -797,7 +797,7 @@ export const VaultView: React.FC = () => {
                     className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)]"
                   >
                     <Unlock className="h-4 w-4" />
-                    <span>Unlock with Passphrase</span>
+                    <span>{t('ui.unlockWithPassphrase')}</span>
                   </button>
                 </div>
               ) : (
@@ -805,7 +805,7 @@ export const VaultView: React.FC = () => {
                   {/* Binary Preview Surface */}
                   <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] overflow-hidden min-h-[180px] flex items-center justify-center">
                     {binaryLoading ? (
-                      <span className="text-xs text-[var(--text-muted)]">Loading local binary...</span>
+                      <span className="text-xs text-[var(--text-muted)]">{t('ui.loadingLocalBinary')}</span>
                     ) : previewUrl && previewMime?.startsWith('image/') ? (
                       <img
                         src={previewUrl}
@@ -830,7 +830,7 @@ export const VaultView: React.FC = () => {
                           className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
                         >
                           <Download className="h-3.5 w-3.5 text-[var(--accent)]" />
-                          <span>Download PDF</span>
+                          <span>{t('ui.downloadPdf')}</span>
                         </button>
                       </div>
                     ) : previewText ? (

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { parseFinanceSentence } from '../../../core/ai/globalAssistantClient';
+import { exportTextFileNativeOrWeb } from '../../../core/native/mobileBridge';
 import {
   convertMinorUnits,
   DEFAULT_FX_RATES_TO_IQD,
@@ -299,15 +300,13 @@ export const FinanceView: React.FC = () => {
     }
   };
 
-  const handleExportCsv = () => {
+  const handleExportCsv = async () => {
     const csv = exportTransactionsToCsv(transactions);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lifeos-finance-${activeMonthKey}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    await exportTextFileNativeOrWeb(
+      `lifeinone-finance-${activeMonthKey}.csv`,
+      csv,
+      'text/csv;charset=utf-8'
+    );
     showToast(`Exported ${transactions.length} transactions to formula-safe CSV.`);
   };
 
@@ -542,7 +541,7 @@ export const FinanceView: React.FC = () => {
                 onChange={(e) => setTypeFilter(e.target.value as 'all' | TransactionType)}
                 className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 text-xs text-[var(--text-primary)]"
               >
-                <option value="all">All Types</option>
+                <option value="all">{t('ui.allTypes')}</option>
                 <option value="income">{t('finance.typeIncome')}</option>
                 <option value="expense">{t('finance.typeExpense')}</option>
               </select>
@@ -552,7 +551,7 @@ export const FinanceView: React.FC = () => {
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 text-xs text-[var(--text-primary)]"
               >
-                <option value="all">All Categories</option>
+                <option value="all">{t('ui.allCategories')}</option>
                 {ALL_TRANSACTION_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {CATEGORY_LABELS[c]}

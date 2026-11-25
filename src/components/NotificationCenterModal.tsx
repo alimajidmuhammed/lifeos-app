@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Bell, CheckCheck, Clock, Scale, Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { computeEffectiveStatus } from '../core/debts/debtEngine';
 import { getEffectiveFireDate } from '../core/reminders/notificationScheduler';
 import { hapticLight } from '../core/native/mobileBridge';
@@ -74,6 +75,7 @@ export function useAllInboxNotifications(): {
 }
 
 export const NotificationCenterModal: React.FC = () => {
+  const { t } = useTranslation();
   const open = useNotificationInboxStore((s) => s.open);
   const setOpen = useNotificationInboxStore((s) => s.setOpen);
   const markRead = useNotificationInboxStore((s) => s.markRead);
@@ -107,7 +109,7 @@ export const NotificationCenterModal: React.FC = () => {
         <div className="shrink-0 flex items-center justify-between gap-2 border-b border-[var(--border-hairline)] px-5 py-4">
           <div className="flex items-center gap-2.5">
             <Bell className="h-4 w-4 text-[var(--accent)]" />
-            <h2 className="text-base font-semibold text-[var(--text-primary)]">Notifications</h2>
+            <h2 className="text-base font-semibold text-[var(--text-primary)]">{t('ui.notifications')}</h2>
             {unreadCount > 0 && (
               <span className="font-numeric inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-2 py-0.5 text-[11px] font-bold text-white">
                 {unreadCount}
@@ -125,7 +127,7 @@ export const NotificationCenterModal: React.FC = () => {
                 className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium text-[var(--accent)] hover:bg-[var(--accent-soft)]"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
-                <span>Mark all read</span>
+                <span>{t('ui.markAllRead')}</span>
               </button>
             )}
             <button
@@ -146,9 +148,9 @@ export const NotificationCenterModal: React.FC = () => {
               <div className="mx-auto h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center anim-habit-pulse">
                 <Bell className="h-6 w-6 anim-bell-swing" />
               </div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">All caught up</p>
+              <p className="text-sm font-semibold text-[var(--text-primary)]">{t('ui.allCaughtUp')}</p>
               <p className="text-xs text-[var(--text-muted)]">
-                Missed reminders, overdue alerts, and app announcements will appear here.
+                {t('ui.notificationsEmptyDesc')}
               </p>
             </div>
           ) : (

@@ -36,6 +36,8 @@ import { useVault } from '../../../hooks/useVault';
 import { useHabits } from '../../../hooks/useHabits';
 import { useFinance } from '../../../hooks/useFinance';
 import { useUIStore, type NavRoute } from '../../../state/useUIStore';
+import { LottieBadge } from '../../../components/LottieBadge';
+import allCaughtUpAnim from '../../../assets/lottie/all-caught-up.json';
 
 const ONBOARDING_DISMISSED_KEY = 'lifeos_onboarding_dismissed_v1';
 
@@ -588,8 +590,16 @@ export const HomeView: React.FC = () => {
 
         {needsYouToday.length === 0 ? (
           <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 text-center space-y-2">
-            <div className="mx-auto h-10 w-10 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
-              <CheckCircle2 className="h-5 w-5" />
+            <div className="mx-auto flex items-center justify-center">
+              <LottieBadge
+                animationData={allCaughtUpAnim}
+                size={56}
+                fallback={
+                  <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
+                }
+              />
             </div>
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               {t('home.allCaughtUpTitle')}

@@ -80,7 +80,12 @@ export const RollingQueuePanel: React.FC<{
               </button>
             ) : (
               <span className="text-xs text-[var(--text-muted)]">
-                Browser alerts: {notifPermission === 'denied' ? 'Blocked in browser settings' : 'Unsupported'}
+                {isNativePlatform() ? 'Device alerts' : 'Browser alerts'}:{' '}
+                {notifPermission === 'denied'
+                  ? isNativePlatform()
+                    ? 'Blocked in Phone Settings'
+                    : 'Blocked in browser settings'
+                  : 'Unsupported'}
               </span>
             )}
           </div>

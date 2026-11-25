@@ -11,7 +11,25 @@ export const getNativePlatformName = (): 'ios' | 'android' | 'web' => {
 };
 
 /**
- * Request notification permissions natively or check status.
+ * Check current native OS notification permission without prompting.
+ */
+export async function getNativeNotificationPermissionState(): Promise<'granted' | 'denied' | 'default'> {
+  if (!isNativePlatform()) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      return Notification.permission as 'granted' | 'denied' | 'default';
+    }
+    return 'default';
+  }
+  try {
+    const status = await LocalNotifications.checkPermissions();
+    return status.display === 'granted' ? 'granted' : status.display === 'denied' ? 'denied' : 'default';
+  } catch {
+    return 'default';
+  }
+}
+
+/**
+ * Request notification permissions natively (including Android exact alarms) or check status.
  */
 export async function checkOrRequestNativeNotificationPermission(): Promise<'granted' | 'denied' | 'default'> {
   if (!isNativePlatform()) {
@@ -22,15 +40,22 @@ export async function checkOrRequestNativeNotificationPermission(): Promise<'gra
   }
 
   try {
-    const status = await LocalNotifications.checkPermissions();
-    if (status.display === 'granted') {
+    let status = await LocalNotifications.checkPermissions();
+    if (status.display !== 'granted') {
+      status = await LocalNotifications.requestPermissions();
+    }
+    if (status.display === 'granted' && Capacitor.getPlatform() === 'android') {
+      try {
+        const exact = await LocalNotifications.checkExactNotificationSetting();
+        if (exact.exact_alarm !== 'granted') {
+          await LocalNotifications.changeExactNotificationSetting();
+        }
+      } catch {
+        // Older Android versions do not require explicit exact alarm prompt
+      }
       return 'granted';
     }
-    if (status.display === 'denied') {
-      return 'denied';
-    }
-    const requested = await LocalNotifications.requestPermissions();
-    return requested.display === 'granted' ? 'granted' : requested.display === 'denied' ? 'denied' : 'default';
+    return status.display === 'granted' ? 'granted' : status.display === 'denied' ? 'denied' : 'default';
   } catch (err) {
     console.error('Error requesting native notification permissions:', err);
     return 'default';
@@ -45,12 +70,11 @@ export async function initializeNotificationChannels(): Promise<void> {
 
   try {
     await LocalNotifications.createChannel({
-      id: 'lifeos_reminders_channel',
+      id: 'lifeos_reminders_v2',
       name: 'LifeOS Reminders',
       description: 'Primary alerts for scheduled tasks and life reminders',
       importance: 5, // High importance (heads-up notification + sound)
       visibility: 1, // Public on lockscreen
-      sound: 'beep.wav',
       vibration: true,
       lights: true,
       lightColor: '#059669',
@@ -91,7 +115,7 @@ export async function scheduleNativeLocalNotifications(
       id: idx + 1001,
       title: s.title,
       body: s.source === 'debt_due' ? `Payment / debt due: ${s.title}` : `Scheduled reminder (${s.category})`,
-      channelId: 'lifeos_reminders_channel',
+      channelId: 'lifeos_reminders_v2',
       schedule: {
         at: new Date(s.scheduledFireAtIso),
         allowWhileIdle: true, // Exact alarm on modern Android battery doze
@@ -128,7 +152,7 @@ export async function sendNativeTestNotification(slotCount: number): Promise<boo
           id: 9999,
           title: 'LifeOS Native Alert',
           body: `Native device notification active (${slotCount}/64 slots queued).`,
-          channelId: 'lifeos_reminders_channel',
+          channelId: 'lifeos_reminders_v2',
           schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },
         },
       ],

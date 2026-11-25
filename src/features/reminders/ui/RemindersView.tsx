@@ -165,13 +165,25 @@ export const RemindersView: React.FC = () => {
     if (res === 'granted') {
       showToast(isNativePlatform() ? 'Native device alarms enabled.' : 'Browser notifications enabled.');
     } else if (res === 'denied') {
-      showToast('Browser notifications were blocked in site settings.');
+      showToast(
+        isNativePlatform()
+          ? 'Notifications blocked in Phone Settings → Apps → LifeOS.'
+          : 'Browser notifications were blocked in site settings.'
+      );
     }
   };
 
   const handleSendTest = () => {
     const ok = sendTestNotification();
-    showToast(ok ? 'Test notification dispatched.' : 'Enable browser notification permission first.');
+    showToast(
+      ok
+        ? isNativePlatform()
+          ? 'Native alarm scheduled (fires in 1s).'
+          : 'Test notification dispatched.'
+        : isNativePlatform()
+          ? 'Enable device alarm permission first.'
+          : 'Enable browser notification permission first.'
+    );
   };
 
   const nowMs = Date.now();
@@ -215,7 +227,9 @@ export const RemindersView: React.FC = () => {
             <Bell className="h-4 w-4" />
             <span>
               {notifPermission === 'granted'
-                ? 'Test Push Alert'
+                ? isNativePlatform()
+                  ? 'Test Native Alert'
+                  : 'Test Push Alert'
                 : notifPermission === 'denied'
                   ? 'Alerts Blocked'
                   : 'Enable Phone Alerts'}

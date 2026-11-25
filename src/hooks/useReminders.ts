@@ -8,6 +8,7 @@ import {
 } from '../core/reminders/notificationScheduler';
 import {
   checkOrRequestNativeNotificationPermission,
+  getNativeNotificationPermissionState,
   isNativePlatform,
 } from '../core/reminders/nativeNotifications';
 import {
@@ -40,9 +41,17 @@ export function useReminders() {
   const [reminders, setReminders] = useState<ReminderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifPermission, setNotifPermission] = useState<BrowserNotificationState>(
-    getNotificationPermissionState
+    () => (isNativePlatform() ? 'default' : getNotificationPermissionState())
   );
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
+
+  // Sync real native OS notification permission on mount (bypasses window.Notification in WebView)
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+    void getNativeNotificationPermissionState().then((state) => {
+      setNotifPermission(state);
+    });
+  }, []);
 
   const repo = authUser ? firebaseRemindersRepository : localRemindersRepository;
   const uid = authUser?.uid ?? 'local_offline_user';
@@ -183,8 +192,15 @@ export function useReminders() {
   }, [rollingQueue.slots.length]);
 
   const createReminder = useCallback(
-    (input: CreateReminderInput) => repo.createReminder(uid, input),
-    [repo, uid]
+    async (input: CreateReminderInput) => {
+      const created = await repo.createReminder(uid, input);
+      if (isNativePlatform() && notifPermission !== 'granted') {
+        const perm = await checkOrRequestNativeNotificationPermission();
+        setNotifPermission(perm);
+      }
+      return created;
+    },
+    [repo, uid, notifPermission]
   );
 
   const updateReminder = useCallback(

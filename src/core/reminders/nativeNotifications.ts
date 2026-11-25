@@ -71,7 +71,7 @@ export async function initializeNotificationChannels(): Promise<void> {
   try {
     await LocalNotifications.createChannel({
       id: 'lifeos_reminders_v2',
-      name: 'LifeOS Reminders',
+      name: 'LifeinOne Reminders',
       description: 'Primary alerts for scheduled tasks and life reminders',
       importance: 5, // High importance (heads-up notification + sound)
       visibility: 1, // Public on lockscreen
@@ -166,7 +166,7 @@ export async function sendNativeTestNotification(slotCount: number): Promise<boo
       notifications: [
         {
           id: 9999,
-          title: 'LifeOS Native Alert',
+          title: 'LifeinOne Native Alert',
           body: `Native device notification active (${slotCount}/64 slots queued).`,
           channelId: 'lifeos_reminders_v2',
           schedule: { at: new Date(Date.now() + 1000), allowWhileIdle: true },

@@ -17,7 +17,7 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
   }
 
   componentDidCatch(error: Error) {
-    console.error('LifeOS ErrorBoundary caught:', error);
+    console.error('LifeinOne ErrorBoundary caught:', error);
   }
 
   render() {
@@ -30,7 +30,7 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
               <h1 className="text-lg font-semibold">Workspace Recovery</h1>
             </div>
             <p className="mt-3 text-sm text-[var(--text-secondary)]">
-              LifeOS encountered an unexpected error. Your offline local cache remains intact.
+              LifeinOne encountered an unexpected error. Your offline local cache remains intact.
             </p>
             <pre className="mt-4 max-h-40 overflow-auto rounded-lg bg-[var(--bg-subtle)] p-3 font-numeric text-xs text-[var(--text-muted)]">
               {this.state.message}

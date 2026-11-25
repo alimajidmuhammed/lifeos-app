@@ -25,8 +25,14 @@ export type ParsedTransactionDraft = z.infer<typeof ParsedTransactionDraftSchema
 
 export const ProposedToolActionSchema = z.object({
   requiresConfirmation: z.literal(true),
-  module: z.enum(['planner', 'reminders', 'habits', 'finance']),
-  actionType: z.enum(['create_task', 'create_reminder', 'create_habit', 'create_transaction']),
+  module: z.enum(['planner', 'reminders', 'habits', 'finance', 'debts']),
+  actionType: z.enum([
+    'create_task',
+    'create_reminder',
+    'create_habit',
+    'create_transaction',
+    'create_debts',
+  ]),
   title: z.string().min(1).max(160),
   details: z.string().max(400),
   payload: z.record(z.string(), z.unknown()),

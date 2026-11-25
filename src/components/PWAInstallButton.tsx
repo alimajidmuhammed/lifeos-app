@@ -45,13 +45,13 @@ export const PWAInstallButton: React.FC<{ compact?: boolean }> = ({ compact = fa
           <div
             role="dialog"
             aria-modal="true"
-            aria-label="Install LifeOS on iOS"
+            aria-label="Install LifeinOne on iOS"
             className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs"
           >
             <div className="w-full max-w-sm rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-base font-semibold text-[var(--text-primary)]">
-                  Install LifeOS on iPhone / iPad
+                  Install LifeinOne on iPhone / iPad
                 </h2>
                 <button
                   type="button"

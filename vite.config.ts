@@ -18,8 +18,8 @@ export default defineConfig(() => {
         includeAssets: ['logo.png', 'icon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png', 'pwa-maskable-512x512.png'],
         manifest: {
           id: '/',
-          name: 'LifeOS — Personal Life Manager',
-          short_name: 'LifeOS',
+          name: 'LifeinOne — Personal Life Manager',
+          short_name: 'LifeinOne',
           description: 'Offline-first, privacy-hardened personal life operating system for debts, reminders, tasks, notes, secure vault, habits, and finances.',
           theme_color: '#059669',
           background_color: '#F8FAFC',

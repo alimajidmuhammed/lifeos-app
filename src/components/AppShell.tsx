@@ -326,7 +326,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           >
             <img
               src="/logo.png"
-              alt="LifeOS"
+              alt="LifeinOne"
               className="h-7 w-7 rounded-lg shrink-0 object-contain"
             />
             {!sidebarCollapsed && (
@@ -429,7 +429,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           <div className="flex items-center gap-2.5 min-w-0">
             <img
               src="/logo.png"
-              alt="LifeOS"
+              alt="LifeinOne"
               className="h-6 w-6 rounded-md lg:hidden shrink-0 object-contain"
             />
             <span className="text-sm font-medium text-[var(--text-muted)] hidden lg:inline whitespace-nowrap">
@@ -608,7 +608,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <img src="/logo.png" alt="LifeOS" className="h-7 w-7 rounded-lg shrink-0 object-contain" />
+                <img src="/logo.png" alt="LifeinOne" className="h-7 w-7 rounded-lg shrink-0 object-contain" />
                 <div>
                   <h2 className="text-base font-bold text-[var(--text-primary)]">{t('appName')}</h2>
                   <p className="text-[11px] text-[var(--text-muted)]">Personal Life Command Center</p>

@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.lifeos.app',
-  appName: 'LifeOS',
+  appName: 'LifeinOne',
   webDir: 'dist',
   plugins: {
     LocalNotifications: {

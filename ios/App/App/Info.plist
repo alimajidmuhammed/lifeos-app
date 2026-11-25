@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>LifeOS</string>
+        <string>LifeinOne</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -67,8 +67,8 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>LifeOS uses the camera to scan receipts and private documents locally into your encrypted Vault.</string>
+	<string>LifeinOne uses the camera to scan receipts and private documents locally into your encrypted Vault.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>LifeOS uses your photo library to import document scans locally into your Vault.</string>
+	<string>LifeinOne uses your photo library to import document scans locally into your Vault.</string>
 </dict>
 </plist>

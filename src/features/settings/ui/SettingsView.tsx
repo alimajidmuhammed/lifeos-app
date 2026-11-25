@@ -183,7 +183,7 @@ export const SettingsView: React.FC = () => {
         return;
       }
       const key = await deriveAesKeyFromSecret(passphrase, profile.e2eSalt);
-      const sample = 'LifeOS AES-256-GCM self-test passed';
+      const sample = 'LifeinOne AES-256-GCM self-test passed';
       const encrypted = await encryptText(sample, key);
       const decrypted = await decryptText(encrypted, key);
       if (decrypted === sample) {
@@ -366,7 +366,7 @@ export const SettingsView: React.FC = () => {
               <span>Font Scale ({fontScale}%)</span>
             </h2>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-              Adjust typography size safely across LifeOS without distorting layouts or breaking touch targets.
+              Adjust typography size safely across LifeinOne without distorting layouts or breaking touch targets.
             </p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-64">
@@ -617,7 +617,7 @@ export const SettingsView: React.FC = () => {
                 <span>Device Biometrics (WebAuthn)</span>
               </h2>
               <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                Unlock LifeOS using Touch ID, Face ID, or Windows Hello. Credentials remain strictly on-device.
+                Unlock LifeinOne using Touch ID, Face ID, or Windows Hello. Credentials remain strictly on-device.
               </p>
             </div>
             {webAuthnSupported ? (
@@ -711,7 +711,7 @@ export const SettingsView: React.FC = () => {
                 {recoveryKeyDisplay}
               </div>
               <p className="text-xs text-[var(--text-secondary)]">
-                LifeOS never stores this key or your passphrase. Store it safely outside your phone.
+                LifeinOne never stores this key or your passphrase. Store it safely outside your phone.
               </p>
             </div>
           )}

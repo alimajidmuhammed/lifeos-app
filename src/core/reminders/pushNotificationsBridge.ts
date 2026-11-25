@@ -186,7 +186,7 @@ export async function triggerBackgroundTestAlert(slotCount: number): Promise<boo
   if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && Notification.permission === 'granted') {
     try {
       const reg = await navigator.serviceWorker.ready;
-      await reg.showNotification('LifeOS Smart Reminders', {
+      await reg.showNotification('LifeinOne Smart Reminders', {
         body: `Alerts active. Rolling queue has ${slotCount}/64 slots scheduled.`,
         icon: '/pwa-192x192.png',
       });
@@ -197,7 +197,7 @@ export async function triggerBackgroundTestAlert(slotCount: number): Promise<boo
   }
 
   if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-    new Notification('LifeOS Smart Reminders', {
+    new Notification('LifeinOne Smart Reminders', {
       body: `Alerts active. Rolling queue has ${slotCount}/64 slots scheduled.`,
       icon: '/pwa-192x192.png',
     });

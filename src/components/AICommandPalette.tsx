@@ -26,6 +26,7 @@ import {
   type TransactionCategory,
 } from '../core/finance/financeSchemas';
 import { HABIT_CATEGORIES, type HabitCategory } from '../core/habits/habitSchemas';
+import { DebtCategorySchema, type DebtCategory, type DebtDirection } from '../core/debts/debtSchemas';
 import {
   searchWorkspaceSnapshot,
   type SearchModuleId,
@@ -64,7 +65,7 @@ export const AICommandPalette: React.FC = () => {
   const showToast = useUIStore((s) => s.showToast);
 
   // Live workspace data across all 7 modules
-  const { debts, fxRates } = useDebts();
+  const { debts, fxRates, createDebt } = useDebts();
   const { reminders, createReminder } = useReminders();
   const { tasks, createTask } = usePlanner();
   const { notes } = useNotes();
@@ -320,6 +321,53 @@ export const AICommandPalette: React.FC = () => {
           isRecurring: false,
         });
         const msg = `Recorded ${type} in Personal Finance (${major} ${currency}).`;
+        setActionConfirmedMsg(msg);
+        showToast(msg);
+      } else if (action.actionType === 'create_debts') {
+        const rawItems = Array.isArray(p.items) ? p.items : [p];
+        let createdCount = 0;
+        for (const rawItem of rawItems) {
+          if (!rawItem || typeof rawItem !== 'object') continue;
+          const item = rawItem as Record<string, unknown>;
+          const personName = String(item.personName || '').trim().slice(0, 120);
+          const amountMajor = Number(item.amountMajor);
+          if (!personName || !Number.isFinite(amountMajor) || amountMajor <= 0) continue;
+          const direction: DebtDirection =
+            item.direction === 'owed_to_me' ? 'owed_to_me' : 'i_owe';
+          const rawCurr = String(item.currency || profile.primaryCurrency).toUpperCase();
+          const currency: CurrencyCode =
+            rawCurr === 'USD' || rawCurr === 'EUR' || rawCurr === 'IQD'
+              ? rawCurr
+              : profile.primaryCurrency;
+          const rawCat = String(item.category || 'personal');
+          const category: DebtCategory = (DebtCategorySchema.options as readonly string[]).includes(rawCat)
+            ? (rawCat as DebtCategory)
+            : 'personal';
+          const dueDate =
+            typeof item.dueDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(item.dueDate)
+              ? item.dueDate
+              : undefined;
+          const notes =
+            typeof item.notes === 'string' && item.notes.trim()
+              ? item.notes.trim().slice(0, 2000)
+              : undefined;
+
+          await createDebt({
+            direction,
+            personName,
+            category,
+            principalMinor: toMinorUnits(amountMajor, currency),
+            currency,
+            interestRateBps: 0,
+            dueDate,
+            notes,
+          });
+          createdCount += 1;
+        }
+        const msg =
+          createdCount > 0
+            ? `Added ${createdCount} debt record${createdCount === 1 ? '' : 's'} to Debts Manager.`
+            : 'No valid debt entries found to create.';
         setActionConfirmedMsg(msg);
         showToast(msg);
       }

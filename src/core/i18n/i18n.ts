@@ -11,7 +11,7 @@ export function isRtlLocale(locale: SupportedLocale): boolean {
 const resources = {
   en: {
     translation: {
-      appName: 'LifeOS',
+      appName: 'LifeinOne',
       nav: {
         home: 'Home',
         debts: 'Debts',
@@ -25,7 +25,7 @@ const resources = {
         more: 'More',
       },
       common: {
-        searchPlaceholder: 'Ask LifeOS or jump to a module...',
+        searchPlaceholder: 'Ask LifeinOne or jump to a module...',
         quickAction: 'Ask AI',
         signInGoogle: 'Sign in with Google',
         signOut: 'Sign out',
@@ -83,7 +83,7 @@ const resources = {
         emptyHintHabits: 'Start a daily habit',
         emptyHintFinance: 'Log income or expense',
         streakDays: '{{count}}-day streak',
-        onboardingTitle: 'Get started with LifeOS',
+        onboardingTitle: 'Get started with LifeinOne',
         onboardingProgress: '{{done}} of {{total}} completed',
         setupProgress: 'Setup {{done}} of {{total}}',
         onboardingDismiss: 'Dismiss',
@@ -110,7 +110,7 @@ const resources = {
         languageDesc: 'Full logical RTL layout mirroring for Arabic and Kurdish Sorani.',
         currenciesTitle: 'Currencies & Quiet Hours',
         aiPrivacyTitle: 'AI Privacy Gate & Quotas',
-        aiGlobalLabel: 'Enable AI Assistant across LifeOS',
+        aiGlobalLabel: 'Enable AI Assistant across LifeinOne',
         aiOn: 'On',
         aiOff: 'Off',
         blockedFreeTier: 'Blocked on free tier',
@@ -134,7 +134,7 @@ const resources = {
         analyticsConsentLabel: 'Opt-in anonymous usage analytics',
       },
       assistant: {
-        title: 'LifeOS AI Command Palette',
+        title: 'LifeinOne AI Command Palette',
         subtitle: 'Deterministic math stays on-device. Any data change requires your confirmation preview first.',
         inputPlaceholder: 'Try: "Remind me every Sunday at 9am to review expenses" or test the Privacy Gate with "Scan my passport"',
         sendBtn: 'Send',
@@ -143,12 +143,12 @@ const resources = {
         previewLabel: 'Exact payload preview (transparent before sending)',
         privacyBlockedTitle: 'Blocked by Privacy Gate',
         confirmationTitle: 'Action Confirmation Preview',
-        confirmationDesc: 'LifeOS AI never mutates data silently. Review and confirm before applying.',
+        confirmationDesc: 'LifeinOne AI never mutates data silently. Review and confirm before applying.',
         confirmedFeedback: 'Action approved in Phase 1 dry-run preview (persistence wires in module phase).',
-        disabledNotice: 'AI is currently disabled in Settings. All deterministic offline LifeOS tools remain fully usable.',
+        disabledNotice: 'AI is currently disabled in Settings. All deterministic offline LifeinOne tools remain fully usable.',
       },
       lock: {
-        title: 'LifeOS is Locked',
+        title: 'LifeinOne is Locked',
         subtitle: 'Enter your local PIN or use Biometrics to unlock your workspace.',
         unlockBtn: 'Unlock Workspace',
         wrongPin: 'Incorrect PIN. Please try again.',
@@ -500,7 +500,7 @@ const resources = {
         emptyHintHabits: 'ابدأ عادة يومية',
         emptyHintFinance: 'سجّل دخلاً أو مصروفاً',
         streakDays: 'سلسلة {{count}} يوم',
-        onboardingTitle: 'ابدأ مع LifeOS',
+        onboardingTitle: 'ابدأ مع LifeinOne',
         onboardingProgress: 'تم إنجاز {{done}} من {{total}}',
         setupProgress: 'الإعداد {{done}} من {{total}}',
         onboardingDismiss: 'إخفاء',
@@ -917,7 +917,7 @@ const resources = {
         emptyHintHabits: 'خوویەکی ڕۆژانە دەست پێبکە',
         emptyHintFinance: 'داهات یان خەرجی تۆمار بکە',
         streakDays: 'زنجیرەی {{count}} ڕۆژ',
-        onboardingTitle: 'دەستپێکردن لەگەڵ LifeOS',
+        onboardingTitle: 'دەستپێکردن لەگەڵ LifeinOne',
         onboardingProgress: '{{done}} لە {{total}} تەواوبووە',
         setupProgress: 'ڕێکخستن {{done}} لە {{total}}',
         onboardingDismiss: 'شاردنەوە',

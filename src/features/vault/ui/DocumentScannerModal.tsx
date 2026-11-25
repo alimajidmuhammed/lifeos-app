@@ -506,14 +506,14 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={t('vault.addDocument')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
+      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
       onClick={resetAndClose}
     >
       <div
-        className="w-full h-dvh sm:h-auto sm:max-w-3xl rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:my-auto sm:max-h-[90dvh] anim-top-sheet"
+        className="w-full h-dvh sm:h-auto sm:max-w-3xl rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:my-auto sm:max-h-[90dvh] flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-hairline)]">
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-[var(--border-hairline)]">
           <div>
             <h2 className="text-base font-semibold text-[var(--text-primary)]">
               {t('vault.addDocument')}
@@ -532,7 +532,7 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={(e) => void handleSubmit(e)} className="p-5 space-y-5 max-h-[82dvh] overflow-y-auto">
+        <form id="lifeos-vault-scan-form" onSubmit={(e) => void handleSubmit(e)} className="flex-1 p-5 space-y-5 overflow-y-auto">
           {/* Capture / Upload Zone */}
           <div
             onDragOver={(e) => {
@@ -1115,25 +1115,26 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
           </div>
 
           {error && <p className="text-xs font-medium text-red-600 dark:text-red-400">{error}</p>}
-
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-hairline)]">
-            <button
-              type="button"
-              onClick={resetAndClose}
-              className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
-            >
-              {t('common.cancel')}
-            </button>
-            <button
-              type="submit"
-              disabled={saving || processing}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
-            >
-              <Check className="h-3.5 w-3.5" />
-              <span>{saving ? 'Saving...' : t('vault.saveDocument')}</span>
-            </button>
-          </div>
         </form>
+
+        <div className="shrink-0 flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] pb-safe">
+          <button
+            type="button"
+            onClick={resetAndClose}
+            className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="submit"
+            form="lifeos-vault-scan-form"
+            disabled={saving || processing}
+            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+          >
+            <Check className="h-3.5 w-3.5" />
+            <span>{saving ? 'Saving...' : t('vault.saveDocument')}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

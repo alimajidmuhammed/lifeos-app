@@ -217,14 +217,14 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={isEditing ? t('debts.editDebt') : t('debts.addDebt')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
+      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="w-full h-dvh sm:h-auto sm:max-w-lg sm:max-h-[90dvh] overflow-y-auto rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl anim-top-sheet"
+        className="w-full h-dvh sm:h-auto sm:max-w-lg sm:max-h-[90dvh] overflow-hidden rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[var(--border-hairline)] bg-[var(--bg-surface)] px-5 py-4">
+        <div className="shrink-0 flex items-center justify-between border-b border-[var(--border-hairline)] bg-[var(--bg-surface)] px-5 py-4">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">
             {isEditing ? t('debts.editDebt') : t('debts.addDebt')}
           </h2>
@@ -238,7 +238,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           </button>
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* AI Natural Language Quick Parser (Create mode only, always confirmation-gated) */}
           {!isEditing && (
             <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
@@ -285,7 +285,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             </div>
           )}
 
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          <form id="lifeos-debt-form" onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             {/* Direction Segmented Control */}
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
@@ -441,24 +441,25 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
             {formError && (
               <p className="text-xs font-medium text-red-600 dark:text-red-400">{formError}</p>
             )}
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border-hairline)]">
-              <button
-                type="button"
-                onClick={onClose}
-                className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="min-h-[42px] rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
-              >
-                {saving ? '...' : isEditing ? t('debts.saveChanges') : t('debts.saveDebt')}
-              </button>
-            </div>
           </form>
+        </div>
+
+        <div className="shrink-0 flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] pb-safe">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="submit"
+            form="lifeos-debt-form"
+            disabled={saving}
+            className="min-h-[42px] rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+          >
+            {saving ? '...' : isEditing ? t('debts.saveChanges') : t('debts.saveDebt')}
+          </button>
         </div>
       </div>
     </div>

@@ -326,11 +326,11 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={isEditing ? t('reminders.editReminder') : t('reminders.addReminder')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
+      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
       onClick={onClose}
     >
       <div
-        className="w-full h-dvh sm:h-auto sm:max-w-xl rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:my-auto sm:max-h-[90dvh] flex flex-col anim-top-sheet"
+        className="w-full h-dvh sm:h-auto sm:max-w-xl rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:my-auto sm:max-h-[90dvh] flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-hairline)] shrink-0">
@@ -347,7 +347,7 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
           </button>
         </div>
 
-        <div className="p-5 space-y-5 overflow-y-auto">
+        <div className="flex-1 p-5 space-y-5 overflow-y-auto">
           {/* AI Natural Language Schedule Parser (Create mode only, confirmation-gated) */}
           {!isEditing && (
             <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
@@ -394,7 +394,7 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
             </div>
           )}
 
-          <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          <form id="lifeos-reminder-form" onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
             <div>
               <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                 {t('reminders.titleLabel')}
@@ -652,24 +652,25 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
             {formError && (
               <p className="text-xs font-medium text-red-600 dark:text-red-400">{formError}</p>
             )}
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-[var(--border-hairline)]">
-              <button
-                type="button"
-                onClick={onClose}
-                className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="min-h-[42px] rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
-              >
-                {saving ? '...' : isEditing ? t('reminders.saveChanges') : t('reminders.saveReminder')}
-              </button>
-            </div>
           </form>
+        </div>
+
+        <div className="shrink-0 flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] pb-safe">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="submit"
+            form="lifeos-reminder-form"
+            disabled={saving}
+            className="min-h-[42px] rounded-xl bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-50"
+          >
+            {saving ? '...' : isEditing ? t('reminders.saveChanges') : t('reminders.saveReminder')}
+          </button>
         </div>
       </div>
     </div>

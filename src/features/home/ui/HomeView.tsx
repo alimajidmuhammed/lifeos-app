@@ -407,6 +407,68 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
+      {/* ── 2b. Calm "Up Next" Strip (next 3 upcoming reminders/debts) ── */}
+      {rollingQueue.slots.length > 0 && (
+        <section
+          aria-label="Up next"
+          className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4 sm:p-5 space-y-3"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-[var(--accent)]" />
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                Up Next
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                void hapticLight();
+                setActiveRoute('reminders');
+              }}
+              className="text-xs font-medium text-[var(--accent)] hover:underline inline-flex items-center gap-1"
+            >
+              <span>View all</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {rollingQueue.slots.slice(0, 3).map((slot) => {
+              const d = new Date(slot.scheduledFireAtIso);
+              const timeStr = Number.isNaN(d.getTime())
+                ? ''
+                : new Intl.DateTimeFormat(profile.locale === 'en' ? 'en-US' : profile.locale, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }).format(d);
+              return (
+                <button
+                  key={`${slot.reminderId}_${slot.slotIndex}`}
+                  type="button"
+                  onClick={() => {
+                    void hapticLight();
+                    setActiveRoute(slot.source === 'debt_due' ? 'debts' : 'reminders');
+                  }}
+                  className="text-start rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2.5 hover:bg-[var(--bg-subtle)] transition-colors btn-spring flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-[var(--text-primary)] truncate">
+                      {slot.title}
+                    </div>
+                    <div className="mt-0.5 font-numeric text-[11px] text-[var(--text-muted)] truncate">
+                      {timeStr} · {slot.category}
+                    </div>
+                  </div>
+                  <Bell className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* ── 3. 3D-Perspective Interactive Dashboard Grid ── */}
       <section>
         <div className="flex items-center justify-between mb-3 px-1">

@@ -13,7 +13,6 @@ import {
   Lock,
   LogIn,
   LogOut,
-  Menu,
   Settings,
   Sparkles,
   Wallet,
@@ -25,6 +24,8 @@ import { useUIStore, type NavRoute } from '../state/useUIStore';
 import { useOnlineStatus } from '../hooks/useLifeOS';
 import { authRepository } from '../data/repositories/firebaseWebAdapter';
 import { hapticLight, hapticMedium } from '../core/native/mobileBridge';
+import { useAllInboxNotifications } from './NotificationCenterModal';
+import { useNotificationInboxStore } from '../state/useNotificationInboxStore';
 import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavItem {
@@ -65,6 +66,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const showToast = useUIStore((s) => s.showToast);
 
   const isOnline = useOnlineStatus();
+  const { unreadCount } = useAllInboxNotifications();
+  const notifOpen = useNotificationInboxStore((s) => s.open);
+  const setNotifOpen = useNotificationInboxStore((s) => s.setOpen);
 
   // ── Left-Edge Swipe-Back Gesture (works on Mobile Touch & Web Pointer) ──
   const [swipeProgress, setSwipeProgress] = useState(0); // 0..1
@@ -81,6 +85,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
     const triggerBackAction = () => {
       void hapticLight();
+      if (notifOpen) {
+        setNotifOpen(false);
+        return;
+      }
       if (mobileMoreOpen) {
         setMobileMoreOpen(false);
         return;
@@ -168,7 +176,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [mobileMoreOpen, commandPaletteOpen, setMobileMoreOpen, setCommandPaletteOpen, goBackRoute]);
+  }, [notifOpen, setNotifOpen, mobileMoreOpen, commandPaletteOpen, setMobileMoreOpen, setCommandPaletteOpen, goBackRoute]);
 
   // ── Global Keyboard Shortcuts ──
   useEffect(() => {
@@ -384,21 +392,8 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar: Safe-area aware sticky header */}
         <header className="sticky top-0 z-30 pt-safe border-b border-[var(--border-hairline)] bg-[var(--bg-surface)]/90 backdrop-blur-md">
-          <div className="h-[52px] lg:h-16 px-3 sm:px-4 lg:px-8 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
-            {/* Mobile Burger Menu Button */}
-            <button
-              type="button"
-              aria-label="Open navigation menu"
-              onClick={() => {
-                void hapticLight();
-                setMobileMoreOpen(true);
-              }}
-              className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring shrink-0"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-
+          <div className="h-[52px] lg:h-16 px-3.5 sm:px-4 lg:px-8 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
             <img
               src="/logo.png"
               alt="LifeOS"
@@ -410,12 +405,30 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <span aria-hidden="true" className="hidden lg:inline text-[var(--text-muted)]">
               /
             </span>
-            <span className="text-sm lg:text-base font-semibold text-[var(--text-primary)] truncate">
+            <span className="text-base font-semibold text-[var(--text-primary)] truncate">
               {t(activeNavMeta.labelKey)}
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Notification Center Bell with Unread Badge */}
+            <button
+              type="button"
+              aria-label="Notifications"
+              onClick={() => {
+                void hapticLight();
+                setNotifOpen(true);
+              }}
+              className="relative inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring"
+            >
+              <Bell className="h-[18px] w-[18px]" />
+              {unreadCount > 0 && (
+                <span className="font-numeric absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+
             {pinEnabled && (
               <button
                 type="button"
@@ -431,15 +444,16 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             )}
             <button
               type="button"
+              aria-label={t('common.quickAction')}
               onClick={() => {
                 void hapticLight();
                 setCommandPaletteOpen(true);
               }}
-              className="inline-flex min-h-[38px] sm:min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex h-9 w-9 sm:h-auto sm:w-auto sm:min-h-[40px] items-center justify-center gap-2 rounded-xl bg-[var(--accent)] sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
             >
-              <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-              <span>{t('common.quickAction')}</span>
-              <kbd className="hidden sm:inline font-numeric text-[11px] opacity-80 ms-1">⌘K</kbd>
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">{t('common.quickAction')}</span>
+              <kbd className="hidden md:inline font-numeric text-[11px] opacity-80 ms-1">⌘K</kbd>
             </button>
           </div>
           </div>

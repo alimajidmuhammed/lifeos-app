@@ -3,6 +3,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppShell } from './components/AppShell';
 import { AICommandPalette } from './components/AICommandPalette';
 import { AppLockOverlay } from './components/AppLockOverlay';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { HomeView } from './features/home/ui/HomeView';
 import { useLifeOSSync } from './hooks/useLifeOS';
 import { useUIStore } from './state/useUIStore';
@@ -103,6 +104,7 @@ function LifeOSWorkspace() {
         </Suspense>
       </AppShell>
       <AICommandPalette />
+      <NotificationCenterModal />
       <AppLockOverlay />
     </>
   );

@@ -84,6 +84,7 @@ export const RemindersView: React.FC = () => {
   const [formFocusAi, setFormFocusAi] = useState(false);
   const [editingReminder, setEditingReminder] = useState<ReminderItem | null>(null);
   const [snoozeOpenId, setSnoozeOpenId] = useState<string | null>(null);
+  const [swipeRow, setSwipeRow] = useState<{ id: string; startX: number; startY: number; dx: number } | null>(null);
 
   const openDebts = useMemo(
     () => debts.filter((d) => computeEffectiveStatus(d) !== 'settled'),
@@ -486,10 +487,53 @@ export const RemindersView: React.FC = () => {
                 const chMeta = getChannelMeta(rem.category);
                 const inQuiet = !rem.isCompleted && isInQuietHours(effDate, quietHours);
 
+                const isSwipingThis = swipeRow?.id === rem.id;
+                const swipeDx = isSwipingThis ? swipeRow.dx : 0;
+
                 return (
                   <div
                     key={rem.id}
-                    className="px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:bg-[var(--bg-subtle)]/40 transition-colors"
+                    onTouchStart={(e) => {
+                      const t0 = e.touches[0];
+                      if (!t0 || t0.clientX <= 36) return;
+                      setSwipeRow({ id: rem.id, startX: t0.clientX, startY: t0.clientY, dx: 0 });
+                    }}
+                    onTouchMove={(e) => {
+                      if (!isSwipingThis || !swipeRow) return;
+                      const t0 = e.touches[0];
+                      if (!t0) return;
+                      const dx = t0.clientX - swipeRow.startX;
+                      const dy = Math.abs(t0.clientY - swipeRow.startY);
+                      if (dy > 28 && Math.abs(dx) < 20) {
+                        setSwipeRow(null);
+                        return;
+                      }
+                      if (Math.abs(dx) > 12) {
+                        setSwipeRow({ ...swipeRow, dx: Math.max(-110, Math.min(110, dx)) });
+                      }
+                    }}
+                    onTouchEnd={() => {
+                      if (!isSwipingThis || !swipeRow) return;
+                      const dx = swipeRow.dx;
+                      setSwipeRow(null);
+                      if (dx >= 72) {
+                        void handleCompleteToggle(rem);
+                      } else if (dx <= -72 && !rem.isCompleted) {
+                        void handleQuickSnooze(rem, '1h');
+                      }
+                    }}
+                    style={
+                      swipeDx !== 0
+                        ? { transform: `translateX(${swipeDx}px)`, transition: 'none' }
+                        : { transition: 'transform 200ms ease-out' }
+                    }
+                    className={`px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3 hover:bg-[var(--bg-subtle)]/40 transition-colors ${
+                      swipeDx >= 50
+                        ? 'bg-emerald-500/10'
+                        : swipeDx <= -50 && !rem.isCompleted
+                          ? 'bg-amber-500/10'
+                          : ''
+                    }`}
                   >
                     <div className="flex items-start gap-3.5 min-w-0 flex-1">
                       <button

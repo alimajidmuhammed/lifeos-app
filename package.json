@@ -14,6 +14,13 @@
     "test": "tsx --test src/core/currency/currency.test.ts src/core/ai/privacyGate.test.ts src/core/crypto/e2eCrypto.test.ts src/core/entitlements/entitlements.test.ts src/core/debts/debtEngine.test.ts firestore.rules.test.ts"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/status-bar": "^8.0.4",
     "@firebase/eslint-plugin-security-rules": "^0.0.2",
     "@google/genai": "^3.6.1",
     "@tailwindcss/vite": "^4.3.3",

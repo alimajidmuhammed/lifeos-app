@@ -7,6 +7,10 @@ import {
   type RollingSchedulerSnapshot,
 } from '../core/reminders/notificationScheduler';
 import {
+  checkOrRequestNativeNotificationPermission,
+  isNativePlatform,
+} from '../core/reminders/nativeNotifications';
+import {
   playNotificationChime,
   syncRollingQueueToBackgroundAlerts,
   triggerBackgroundTestAlert,
@@ -141,6 +145,15 @@ export function useReminders() {
   }, []);
 
   const requestBrowserNotifications = useCallback(async (): Promise<BrowserNotificationState> => {
+    if (isNativePlatform()) {
+      const nativeResult = await checkOrRequestNativeNotificationPermission();
+      setNotifPermission(nativeResult);
+      if (nativeResult === 'granted') {
+        void syncRollingQueueToBackgroundAlerts(rollingQueue.slots);
+      }
+      return nativeResult;
+    }
+
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setNotifPermission('unsupported');
       return 'unsupported';
@@ -159,6 +172,10 @@ export function useReminders() {
   }, [rollingQueue.slots]);
 
   const sendTestNotification = useCallback((): boolean => {
+    if (isNativePlatform()) {
+      void triggerBackgroundTestAlert(rollingQueue.slots.length);
+      return true;
+    }
     if (typeof window === 'undefined' || !('Notification' in window)) return false;
     if (Notification.permission !== 'granted') return false;
     void triggerBackgroundTestAlert(rollingQueue.slots.length);

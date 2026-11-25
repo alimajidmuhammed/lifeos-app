@@ -1,3 +1,8 @@
+import {
+  isNativePlatform,
+  scheduleNativeLocalNotifications,
+  sendNativeTestNotification,
+} from './nativeNotifications';
 import type { ScheduledNotificationSlot } from './notificationScheduler';
 
 interface CapacitorLocalNotifPlugin {
@@ -67,9 +72,7 @@ export function playNotificationChime(): void {
 }
 
 export function isNativeCapacitorApp(): boolean {
-  if (typeof window === 'undefined') return false;
-  const cap = (window as CapacitorWindow).Capacitor;
-  return Boolean(cap?.isNativePlatform?.());
+  return isNativePlatform();
 }
 
 async function getOrCreateWebPushSubscription(): Promise<PushSubscription | null> {
@@ -120,33 +123,11 @@ async function getOrCreateWebPushSubscription(): Promise<PushSubscription | null
 export async function syncRollingQueueToBackgroundAlerts(
   slots: ScheduledNotificationSlot[]
 ): Promise<{ mode: 'native' | 'web_push' | 'foreground_only'; count: number }> {
-  // Layer 1: Native Android/iOS via Capacitor
-  if (isNativeCapacitorApp()) {
-    const plugin = (window as CapacitorWindow).Capacitor?.Plugins?.LocalNotifications;
-    if (plugin) {
-      try {
-        if (plugin.getPending && plugin.cancel) {
-          const pending = await plugin.getPending();
-          if (pending.notifications.length > 0) {
-            await plugin.cancel({ notifications: pending.notifications });
-          }
-        }
-        const futureSlots = slots.filter((s) => Date.parse(s.scheduledFireAtIso) > Date.now()).slice(0, 64);
-        if (futureSlots.length > 0) {
-          await plugin.schedule({
-            notifications: futureSlots.map((s, idx) => ({
-              id: idx + 1,
-              title: s.title,
-              body: `Scheduled reminder (${s.category})`,
-              schedule: { at: new Date(s.scheduledFireAtIso), allowWhileIdle: true },
-              extra: { reminderId: s.reminderId },
-            })),
-          });
-        }
-        return { mode: 'native', count: futureSlots.length };
-      } catch {
-        // Fall through
-      }
+  // Layer 1: Native Android/iOS via Capacitor LocalNotifications plugin
+  if (isNativePlatform()) {
+    const scheduledCount = await scheduleNativeLocalNotifications(slots);
+    if (scheduledCount > 0) {
+      return { mode: 'native', count: scheduledCount };
     }
   }
 
@@ -183,25 +164,9 @@ export async function syncRollingQueueToBackgroundAlerts(
 
 export async function triggerBackgroundTestAlert(slotCount: number): Promise<boolean> {
   playNotificationChime();
-  if (isNativeCapacitorApp()) {
-    const plugin = (window as CapacitorWindow).Capacitor?.Plugins?.LocalNotifications;
-    if (plugin) {
-      try {
-        await plugin.schedule({
-          notifications: [
-            {
-              id: 9999,
-              title: 'LifeOS Native Alerts Active',
-              body: `100% offline lock-screen alerts ready (${slotCount}/64 slots).`,
-              schedule: { at: new Date(Date.now() + 1500), allowWhileIdle: true },
-            },
-          ],
-        });
-        return true;
-      } catch {
-        // Fall through
-      }
-    }
+  if (isNativePlatform()) {
+    const success = await sendNativeTestNotification(slotCount);
+    if (success) return true;
   }
 
   // Try real Web Push through Service Worker first

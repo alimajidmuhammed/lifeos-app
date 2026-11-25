@@ -114,10 +114,17 @@ export function useLifeOSSync() {
     };
 
     const applyProfileWithLocalLocale = (prof: UserProfileData) => {
-      if (pendingLocalLocaleOverride && prof.locale !== pendingLocalLocaleOverride) {
-        setProfile({ ...prof, locale: pendingLocalLocaleOverride });
+      let localSavedLocale: UserProfileData['locale'] | null = null;
+      try {
+        const raw = localStorage.getItem('lifeos_locale') as UserProfileData['locale'] | null;
+        if (raw) localSavedLocale = raw;
+      } catch {
+        // Ignore
+      }
+      const preferredLocale = pendingLocalLocaleOverride ?? localSavedLocale;
+      if (preferredLocale && prof.locale !== preferredLocale) {
+        setProfile({ ...prof, locale: preferredLocale });
       } else {
-        pendingLocalLocaleOverride = null;
         setProfile(prof);
       }
     };

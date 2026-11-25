@@ -1,6 +1,9 @@
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { Keyboard } from '@capacitor/keyboard';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import type { ThemeMode } from '../../state/useUIStore';
 
@@ -101,4 +104,53 @@ export function registerNativeBackHandler(getHandlers: () => {
   return () => {
     void listenerHandle?.remove();
   };
+}
+
+export async function hideNativeSplashScreen(): Promise<void> {
+  if (!isNativeApp()) return;
+  try {
+    await SplashScreen.hide();
+  } catch {
+    // Ignore if unavailable
+  }
+}
+
+export function registerNativeKeyboardListener(): () => void {
+  if (!isNativeApp()) return () => {};
+
+  let showHandle: { remove: () => Promise<void> } | null = null;
+  let hideHandle: { remove: () => Promise<void> } | null = null;
+
+  void Keyboard.addListener('keyboardWillShow', () => {
+    document.body.classList.add('keyboard-open');
+  }).then((h) => {
+    showHandle = h;
+  });
+
+  void Keyboard.addListener('keyboardWillHide', () => {
+    document.body.classList.remove('keyboard-open');
+  }).then((h) => {
+    hideHandle = h;
+  });
+
+  return () => {
+    document.body.classList.remove('keyboard-open');
+    void showHandle?.remove();
+    void hideHandle?.remove();
+  };
+}
+
+export async function captureNativePhotoDataUrl(): Promise<string | null> {
+  if (!isNativeApp()) return null;
+  try {
+    const photo = await Camera.getPhoto({
+      quality: 90,
+      allowEditing: false,
+      resultType: CameraResultType.DataUrl,
+      source: CameraSource.Camera,
+    });
+    return photo.dataUrl ?? null;
+  } catch {
+    return null;
+  }
 }

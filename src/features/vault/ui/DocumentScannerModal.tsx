@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { captureNativePhotoDataUrl, isNativeApp } from '../../../core/native/mobileBridge';
 import {
   enhanceScannedImage,
   type EnhancedScanResult,
@@ -579,7 +580,15 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => nativeCameraInputRef.current?.click()}
+                  onClick={() => {
+                    if (isNativeApp()) {
+                      void captureNativePhotoDataUrl().then((dataUrl) => {
+                        if (dataUrl) void addImagePage(dataUrl, 'Camera Scan');
+                      });
+                    } else {
+                      nativeCameraInputRef.current?.click();
+                    }
+                  }}
                   className="sm:hidden inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
                 >
                   <Camera className="h-3.5 w-3.5 text-[var(--accent)]" />

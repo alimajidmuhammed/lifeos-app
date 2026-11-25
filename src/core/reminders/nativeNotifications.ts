@@ -139,3 +139,28 @@ export async function sendNativeTestNotification(slotCount: number): Promise<boo
     return false;
   }
 }
+
+/**
+ * Listens for user tapping a scheduled local notification and routes to the relevant module.
+ */
+export function registerNotificationTapListener(
+  onNavigate: (route: 'reminders' | 'debts') => void
+): () => void {
+  if (!isNativePlatform()) return () => {};
+
+  let handle: { remove: () => Promise<void> } | null = null;
+  void LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+    const extra = action.notification?.extra as { source?: string } | undefined;
+    if (extra?.source === 'debt_due') {
+      onNavigate('debts');
+    } else {
+      onNavigate('reminders');
+    }
+  }).then((h) => {
+    handle = h;
+  });
+
+  return () => {
+    void handle?.remove();
+  };
+}

@@ -493,7 +493,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           void hapticMedium();
           setCommandPaletteOpen(true);
         }}
-        className="sm:hidden fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] end-4 z-30 h-13 w-13 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center hover:bg-[var(--accent-hover)] btn-spring"
+        className="mobile-fab sm:hidden fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] end-4 z-30 h-13 w-13 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center hover:bg-[var(--accent-hover)] btn-spring"
       >
         <Plus className="h-6 w-6" />
       </button>
@@ -501,7 +501,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       {/* Mobile Bottom Tab Bar (Material 3 / iOS-style active pill + safe-area) */}
       <nav
         aria-label="Mobile navigation"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md"
+        className="mobile-bottom-nav lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md"
       >
         <div className="h-[62px] grid grid-cols-5 items-center px-1">
         {MOBILE_PRIMARY_TABS.map((tabId) => {

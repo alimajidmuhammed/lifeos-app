@@ -1,21 +1,34 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppShell } from './components/AppShell';
 import { AICommandPalette } from './components/AICommandPalette';
 import { AppLockOverlay } from './components/AppLockOverlay';
 import { HomeView } from './features/home/ui/HomeView';
-import { DebtsView } from './features/debts/ui/DebtsView';
-import { RemindersView } from './features/reminders/ui/RemindersView';
-import { PlannerView } from './features/planner/ui/PlannerView';
-import { NotesView } from './features/notes/ui/NotesView';
-import { VaultView } from './features/vault/ui/VaultView';
-import { HabitsView } from './features/habits/ui/HabitsView';
-import { FinanceView } from './features/finance/ui/FinanceView';
-import { SettingsView } from './features/settings/ui/SettingsView';
-import { ModuleReadinessView } from './features/modules/ui/ModuleReadinessView';
 import { useLifeOSSync } from './hooks/useLifeOS';
 import { useUIStore } from './state/useUIStore';
-import { registerNativeBackHandler, syncNativeStatusBar } from './core/native/mobileBridge';
+import {
+  hideNativeSplashScreen,
+  registerNativeBackHandler,
+  registerNativeKeyboardListener,
+  syncNativeStatusBar,
+} from './core/native/mobileBridge';
+import { registerNotificationTapListener } from './core/reminders/nativeNotifications';
+
+const DebtsView = lazy(() => import('./features/debts/ui/DebtsView').then((m) => ({ default: m.DebtsView })));
+const RemindersView = lazy(() => import('./features/reminders/ui/RemindersView').then((m) => ({ default: m.RemindersView })));
+const PlannerView = lazy(() => import('./features/planner/ui/PlannerView').then((m) => ({ default: m.PlannerView })));
+const NotesView = lazy(() => import('./features/notes/ui/NotesView').then((m) => ({ default: m.NotesView })));
+const VaultView = lazy(() => import('./features/vault/ui/VaultView').then((m) => ({ default: m.VaultView })));
+const HabitsView = lazy(() => import('./features/habits/ui/HabitsView').then((m) => ({ default: m.HabitsView })));
+const FinanceView = lazy(() => import('./features/finance/ui/FinanceView').then((m) => ({ default: m.FinanceView })));
+const SettingsView = lazy(() => import('./features/settings/ui/SettingsView').then((m) => ({ default: m.SettingsView })));
+const ModuleReadinessView = lazy(() => import('./features/modules/ui/ModuleReadinessView').then((m) => ({ default: m.ModuleReadinessView })));
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center py-20">
+    <div className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--border-hairline)] border-t-[var(--accent)]" />
+  </div>
+);
 
 function LifeOSWorkspace() {
   useLifeOSSync();
@@ -23,11 +36,15 @@ function LifeOSWorkspace() {
   const theme = useUIStore((s) => s.profile.theme);
 
   useEffect(() => {
+    void hideNativeSplashScreen();
+  }, []);
+
+  useEffect(() => {
     void syncNativeStatusBar(theme);
   }, [theme]);
 
   useEffect(() => {
-    return registerNativeBackHandler(() => {
+    const unsubBack = registerNativeBackHandler(() => {
       const s = useUIStore.getState();
       return {
         commandPaletteOpen: s.commandPaletteOpen,
@@ -42,32 +59,44 @@ function LifeOSWorkspace() {
         },
       };
     });
+    const unsubKeyboard = registerNativeKeyboardListener();
+    const unsubNotifTap = registerNotificationTapListener((route) => {
+      useUIStore.getState().setActiveRoute(route);
+    });
+
+    return () => {
+      unsubBack();
+      unsubKeyboard();
+      unsubNotifTap();
+    };
   }, []);
 
   return (
     <>
       <AppShell>
-        {activeRoute === 'home' ? (
-          <HomeView />
-        ) : activeRoute === 'debts' ? (
-          <DebtsView />
-        ) : activeRoute === 'reminders' ? (
-          <RemindersView />
-        ) : activeRoute === 'planner' ? (
-          <PlannerView />
-        ) : activeRoute === 'notes' ? (
-          <NotesView />
-        ) : activeRoute === 'vault' ? (
-          <VaultView />
-        ) : activeRoute === 'habits' ? (
-          <HabitsView />
-        ) : activeRoute === 'finance' ? (
-          <FinanceView />
-        ) : activeRoute === 'settings' ? (
-          <SettingsView />
-        ) : (
-          <ModuleReadinessView route={activeRoute} />
-        )}
+        <Suspense fallback={<RouteFallback />}>
+          {activeRoute === 'home' ? (
+            <HomeView />
+          ) : activeRoute === 'debts' ? (
+            <DebtsView />
+          ) : activeRoute === 'reminders' ? (
+            <RemindersView />
+          ) : activeRoute === 'planner' ? (
+            <PlannerView />
+          ) : activeRoute === 'notes' ? (
+            <NotesView />
+          ) : activeRoute === 'vault' ? (
+            <VaultView />
+          ) : activeRoute === 'habits' ? (
+            <HabitsView />
+          ) : activeRoute === 'finance' ? (
+            <FinanceView />
+          ) : activeRoute === 'settings' ? (
+            <SettingsView />
+          ) : (
+            <ModuleReadinessView route={activeRoute} />
+          )}
+        </Suspense>
       </AppShell>
       <AICommandPalette />
       <AppLockOverlay />

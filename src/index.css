@@ -103,6 +103,11 @@ h1, h2, h3, .font-display {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.keyboard-open .mobile-bottom-nav,
+.keyboard-open .mobile-fab {
+  display: none !important;
+}
+
 /* ── Arabic / Kurdish RTL typography tuning ── */
 :where([dir="rtl"]) {
   line-height: 1.65;

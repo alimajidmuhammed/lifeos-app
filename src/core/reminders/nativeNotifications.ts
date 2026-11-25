@@ -105,29 +105,45 @@ export async function scheduleNativeLocalNotifications(
       await LocalNotifications.cancel({ notifications: pending.notifications });
     }
 
+    const nowMs = Date.now();
     const futureSlots = slots
-      .filter((s) => Date.parse(s.scheduledFireAtIso) > Date.now())
+      .filter((s) => Date.parse(s.scheduledFireAtIso) > nowMs - 5_000)
       .slice(0, 64);
 
     if (futureSlots.length === 0) return 0;
 
-    const notifs = futureSlots.map((s, idx) => ({
-      id: idx + 1001,
-      title: s.title,
-      body: s.source === 'debt_due' ? `Payment / debt due: ${s.title}` : `Scheduled reminder (${s.category})`,
-      channelId: 'lifeos_reminders_v2',
-      schedule: {
-        at: new Date(s.scheduledFireAtIso),
-        allowWhileIdle: true, // Exact alarm on modern Android battery doze
-      },
-      extra: {
-        reminderId: s.reminderId,
-        source: s.source,
-      },
-    }));
+    const buildNotifs = (allowWhileIdle: boolean) =>
+      futureSlots.map((s, idx) => {
+        const fireDate = new Date(s.scheduledFireAtIso);
+        fireDate.setSeconds(0, 0);
+        const at =
+          fireDate.getTime() <= nowMs ? new Date(nowMs + 1000) : fireDate;
+        return {
+          id: idx + 1001,
+          title: s.title,
+          body:
+            s.source === 'debt_due'
+              ? `Payment / debt due: ${s.title}`
+              : `Scheduled reminder (${s.category})`,
+          channelId: 'lifeos_reminders_v2',
+          schedule: {
+            at,
+            allowWhileIdle,
+          },
+          extra: {
+            reminderId: s.reminderId,
+            source: s.source,
+          },
+        };
+      });
 
-    await LocalNotifications.schedule({ notifications: notifs });
-    return notifs.length;
+    try {
+      await LocalNotifications.schedule({ notifications: buildNotifs(true) });
+    } catch (exactErr) {
+      console.warn('Exact alarm schedule rejected, falling back to inexact alarm:', exactErr);
+      await LocalNotifications.schedule({ notifications: buildNotifs(false) });
+    }
+    return futureSlots.length;
   } catch (err) {
     console.error('Failed to schedule native local notifications:', err);
     return 0;

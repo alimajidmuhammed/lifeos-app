@@ -126,9 +126,7 @@ export async function syncRollingQueueToBackgroundAlerts(
   // Layer 1: Native Android/iOS via Capacitor LocalNotifications plugin
   if (isNativePlatform()) {
     const scheduledCount = await scheduleNativeLocalNotifications(slots);
-    if (scheduledCount > 0) {
-      return { mode: 'native', count: scheduledCount };
-    }
+    return { mode: 'native', count: scheduledCount };
   }
 
   // Layer 2: Web Push via Service Worker + Node scheduler
@@ -207,4 +205,29 @@ export async function triggerBackgroundTestAlert(slotCount: number): Promise<boo
   }
 
   return false;
+}
+
+export async function showForegroundLocalNotification(title: string, body: string): Promise<boolean> {
+  playNotificationChime();
+  if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+    return false;
+  }
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, {
+        body,
+        icon: '/pwa-192x192.png',
+      });
+      return true;
+    } catch {
+      // Fall through to window.Notification
+    }
+  }
+  try {
+    new Notification(title, { body, icon: '/pwa-192x192.png' });
+    return true;
+  } catch {
+    return false;
+  }
 }

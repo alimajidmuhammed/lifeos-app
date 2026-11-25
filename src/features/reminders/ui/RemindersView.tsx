@@ -139,8 +139,10 @@ export const RemindersView: React.FC = () => {
     let target: Date;
     if (mode === '15m') {
       target = new Date(Date.now() + 15 * 60 * 1000);
+      target.setSeconds(0, 0);
     } else if (mode === '1h') {
       target = new Date(Date.now() + 60 * 60 * 1000);
+      target.setSeconds(0, 0);
     } else {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);

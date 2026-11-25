@@ -1506,7 +1506,7 @@ async function createServer() {
     }
   });
 
-  // Background 15s scheduler checking due reminder slots
+  // Background 3s scheduler checking due reminder slots at exact minute (:00)
   setInterval(() => {
     const now = Date.now();
     let dirty = false;
@@ -1539,7 +1539,7 @@ async function createServer() {
       }
     }
     if (dirty) persistPushStore();
-  }, 15_000);
+  }, 3_000);
 
   const httpServer = http.createServer(app);
 

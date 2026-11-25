@@ -13,6 +13,7 @@ import {
 } from '../core/reminders/nativeNotifications';
 import {
   playNotificationChime,
+  showForegroundLocalNotification,
   syncRollingQueueToBackgroundAlerts,
   triggerBackgroundTestAlert,
 } from '../core/reminders/pushNotificationsBridge';
@@ -74,9 +75,9 @@ export function useReminders() {
     return () => unsub();
   }, [repo, uid]);
 
-  // Refresh clock tick every 60s so overdue/today badges and foreground alerts stay fresh
+  // Refresh clock tick every 15s so exact-minute reminders & badges stay crisp
   useEffect(() => {
-    const id = window.setInterval(() => setNowTick(Date.now()), 60_000);
+    const id = window.setInterval(() => setNowTick(Date.now()), 15_000);
     return () => window.clearInterval(id);
   }, []);
 
@@ -99,6 +100,49 @@ export function useReminders() {
       }),
     [reminders, quietHours, nowTick, debts]
   );
+
+  // Exact-minute foreground dispatcher for Web / iOS Safari when open
+  useEffect(() => {
+    if (isNativePlatform()) return;
+    const firedKey = 'lifeos_fg_fired_slots_v1';
+    const checkDue = () => {
+      const now = Date.now();
+      let fired: Record<string, number> = {};
+      try {
+        fired = JSON.parse(localStorage.getItem(firedKey) || '{}') as Record<string, number>;
+      } catch {
+        fired = {};
+      }
+      let dirty = false;
+      for (const slot of rollingQueue.slots) {
+        const fireMs = Date.parse(slot.scheduledFireAtIso);
+        if (!Number.isFinite(fireMs)) continue;
+        // Fire within [0s .. +90s] of the scheduled minute
+        if (fireMs <= now && now - fireMs <= 90_000) {
+          const key = `${slot.reminderId}_${slot.scheduledFireAtIso}`;
+          if (!fired[key]) {
+            fired[key] = now;
+            dirty = true;
+            void showForegroundLocalNotification(slot.title, `Reminder (${slot.category})`);
+          }
+        }
+      }
+      if (dirty) {
+        try {
+          const pruned: Record<string, number> = {};
+          for (const [k, ts] of Object.entries(fired)) {
+            if (now - ts < 86_400_000) pruned[k] = ts;
+          }
+          localStorage.setItem(firedKey, JSON.stringify(pruned));
+        } catch {
+          // Ignore
+        }
+      }
+    };
+    checkDue();
+    const id = window.setInterval(checkDue, 3_000);
+    return () => window.clearInterval(id);
+  }, [rollingQueue.slots]);
 
   const sevenDayWorkload: DailyWorkloadSummary[] = useMemo(
     () => analyzeSevenDayWorkload(rollingQueue, new Date(nowTick)),

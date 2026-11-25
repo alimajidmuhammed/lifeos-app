@@ -14,7 +14,6 @@ import {
   LogIn,
   LogOut,
   Menu,
-  Plus,
   Settings,
   Sparkles,
   Wallet,
@@ -436,7 +435,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 void hapticLight();
                 setCommandPaletteOpen(true);
               }}
-              className="hidden sm:inline-flex min-h-[38px] sm:min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex min-h-[38px] sm:min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
             >
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
               <span>{t('common.quickAction')}</span>
@@ -484,19 +483,6 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
         </div>
       )}
-
-      {/* Mobile Quick-Action Floating Action Button (cleanly above bottom navbar + safe-area) */}
-      <button
-        type="button"
-        aria-label={t('common.quickAction')}
-        onClick={() => {
-          void hapticMedium();
-          setCommandPaletteOpen(true);
-        }}
-        className="mobile-fab sm:hidden fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] end-4 z-30 h-13 w-13 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center hover:bg-[var(--accent-hover)] btn-spring"
-      >
-        <Plus className="h-6 w-6" />
-      </button>
 
       {/* Mobile Bottom Tab Bar (Material 3 / iOS-style active pill + safe-area) */}
       <nav

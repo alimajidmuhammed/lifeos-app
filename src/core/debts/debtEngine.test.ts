@@ -28,7 +28,6 @@ function makeDebt(overrides: Partial<DebtRecord> = {}): DebtRecord {
     principalMinor: 500_000,
     remainingMinor: 500_000,
     currency: 'IQD',
-    interestRateBps: 0,
     dueDate: '2026-12-10',
     status: 'active',
     paymentCount: 0,
@@ -101,37 +100,35 @@ test('estimateRepaymentProbability rewards on-time history & partial progress an
   assert.ok(weak.score < 45);
 });
 
-test('computePayoffPlan compares Snowball vs Avalanche order and saves interest under Avalanche', () => {
+test('computePayoffPlan compares Smallest First vs Due Soonest payoff order deterministically', () => {
   const debts: DebtRecord[] = [
     makeDebt({
-      id: 'small_low_apr',
+      id: 'small_later',
       direction: 'i_owe',
       personName: 'Phone Installment',
       currency: 'USD',
       principalMinor: 40_000, // $400
       remainingMinor: 40_000,
-      interestRateBps: 0,
+      dueDate: '2027-06-01',
     }),
     makeDebt({
-      id: 'large_high_apr',
+      id: 'large_sooner',
       direction: 'i_owe',
-      personName: 'Bank Credit Line',
+      personName: 'Supplier Balance',
       currency: 'USD',
       principalMinor: 200_000, // $2,000
       remainingMinor: 200_000,
-      interestRateBps: 2400, // 24% APR
+      dueDate: '2026-12-15',
     }),
   ];
 
-  const snowball = computePayoffPlan(debts, 'snowball', 30_000, 'USD', DEFAULT_FX_RATES_TO_IQD);
-  const avalanche = computePayoffPlan(debts, 'avalanche', 30_000, 'USD', DEFAULT_FX_RATES_TO_IQD);
+  const smallestFirst = computePayoffPlan(debts, 'smallest_first', 30_000, 'USD', DEFAULT_FX_RATES_TO_IQD);
+  const dueSoonest = computePayoffPlan(debts, 'due_soonest', 30_000, 'USD', DEFAULT_FX_RATES_TO_IQD);
 
-  assert.equal(snowball.items[0].debtId, 'small_low_apr');
-  assert.equal(avalanche.items[0].debtId, 'large_high_apr');
-  assert.ok(
-    avalanche.totalInterestPrimaryMinor < snowball.totalInterestPrimaryMinor,
-    'Avalanche must incur strictly less interest than Snowball when APR differs'
-  );
+  assert.equal(smallestFirst.items[0].debtId, 'small_later');
+  assert.equal(dueSoonest.items[0].debtId, 'large_sooner');
+  assert.equal(smallestFirst.totalMonths, 8);
+  assert.equal(dueSoonest.totalMonths, 8);
 });
 
 test('buildCashFlowForecast buckets overdue and 30/60/90-day obligations accurately', () => {

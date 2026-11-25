@@ -16,7 +16,7 @@ const MODULE_INFO: Record<Exclude<NavRoute, 'home' | 'settings'>, ModuleDetailIn
     phase: 2,
     firestorePath: 'users/{uid}/debts + debtLedgers + payments',
     deterministicCore:
-      'Integer minor-unit IQD/USD/EUR balances, partial-payment transactions, installment schedules, Beta-smoothed repayment probability, snowball vs. avalanche payoff math.',
+      'Integer minor-unit IQD/USD/EUR balances, partial-payment transactions, installment schedules, Beta-smoothed repayment probability, and payoff timeline planning.',
     aiCapabilities:
       'Natural-language debt parsing, polite EN/AR/KU reminder drafts, and human explanations of deterministic risk scores.',
     privacyRule: 'Minimal text only; never sends raw contract/receipt images while free_tier=true.',

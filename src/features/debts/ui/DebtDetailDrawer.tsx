@@ -146,12 +146,6 @@ export const DebtDetailDrawer: React.FC<DebtDetailDrawerProps> = ({
                 Principal: {formatMoney(debt.principalMinor, debt.currency, locale)}
               </span>
             </div>
-
-            {debt.interestRateBps > 0 && (
-              <div className="pt-2 border-t border-[var(--border-hairline)] text-xs text-[var(--text-secondary)] font-numeric">
-                APR: {(debt.interestRateBps / 100).toFixed(2)}%
-              </div>
-            )}
           </div>
 
           {/* Primary Actions */}

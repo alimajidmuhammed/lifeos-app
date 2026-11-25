@@ -73,7 +73,6 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
             principalMinor: raw.principalMinor,
             remainingMinor: raw.remainingMinor,
             currency: raw.currency,
-            interestRateBps: raw.interestRateBps ?? 0,
             dueDate: raw.dueDate,
             status: raw.status,
             notes: raw.notes,
@@ -146,7 +145,6 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
       principalMinor: validatedInput.principalMinor,
       remainingMinor: validatedInput.principalMinor,
       currency: validatedInput.currency,
-      interestRateBps: validatedInput.interestRateBps,
       dueDate: validatedInput.dueDate || undefined,
       status: validatedInput.dueDate && validatedInput.dueDate < today ? 'overdue' : 'active',
       notes: validatedInput.notes || undefined,
@@ -174,7 +172,6 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
         principalMinor: validated.principalMinor,
         remainingMinor: validated.remainingMinor,
         currency: validated.currency,
-        interestRateBps: validated.interestRateBps,
         status: validated.status,
         paymentCount: 0,
         version: 1,
@@ -223,7 +220,7 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
     uid: string,
     current: DebtRecord,
     patch: Partial<
-      Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'interestRateBps' | 'dueDate' | 'notes'>
+      Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'dueDate' | 'notes'>
     >
   ): Promise<void> {
     if (current.status === 'settled') {
@@ -235,7 +232,6 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
       personName: patch.personName !== undefined ? patch.personName.trim() : current.personName,
       personPhone: patch.personPhone !== undefined ? patch.personPhone.trim() || undefined : current.personPhone,
       category: patch.category ?? current.category,
-      interestRateBps: patch.interestRateBps ?? current.interestRateBps,
       dueDate: nextDue,
       notes: patch.notes !== undefined ? patch.notes.trim() || undefined : current.notes,
       version: current.version + 1,
@@ -249,7 +245,6 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
       personName: validated.personName,
       personPhone: validated.personPhone ? validated.personPhone : deleteField(),
       category: validated.category,
-      interestRateBps: validated.interestRateBps,
       dueDate: validated.dueDate ? validated.dueDate : deleteField(),
       status: validated.status,
       notes: validated.notes ? validated.notes : deleteField(),
@@ -353,7 +348,6 @@ export class FirebaseWebDebtsRepository implements DebtsRepository {
       principalMinor: validated.principalMinor,
       remainingMinor: validated.remainingMinor,
       currency: validated.currency,
-      interestRateBps: validated.interestRateBps,
       status: validated.status,
       paymentCount: validated.paymentCount,
       version: 1,
@@ -515,7 +509,6 @@ class LocalOfflineDebtsRepository implements DebtsRepository {
       principalMinor: validatedInput.principalMinor,
       remainingMinor: validatedInput.principalMinor,
       currency: validatedInput.currency,
-      interestRateBps: validatedInput.interestRateBps,
       dueDate: validatedInput.dueDate || undefined,
       status: validatedInput.dueDate && validatedInput.dueDate < today ? 'overdue' : 'active',
       notes: validatedInput.notes || undefined,
@@ -551,7 +544,7 @@ class LocalOfflineDebtsRepository implements DebtsRepository {
     _uid: string,
     current: DebtRecord,
     patch: Partial<
-      Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'interestRateBps' | 'dueDate' | 'notes'>
+    Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'dueDate' | 'notes'>
     >
   ): Promise<void> {
     if (current.status === 'settled') {
@@ -563,7 +556,6 @@ class LocalOfflineDebtsRepository implements DebtsRepository {
       personName: patch.personName !== undefined ? patch.personName.trim() : current.personName,
       personPhone: patch.personPhone !== undefined ? patch.personPhone.trim() || undefined : current.personPhone,
       category: patch.category ?? current.category,
-      interestRateBps: patch.interestRateBps ?? current.interestRateBps,
       dueDate: patch.dueDate !== undefined ? patch.dueDate || undefined : current.dueDate,
       notes: patch.notes !== undefined ? patch.notes.trim() || undefined : current.notes,
       version: current.version + 1,

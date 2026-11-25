@@ -24,7 +24,6 @@ function makeSnapshot(): WorkspaceSnapshot {
         principalMinor: 500000,
         remainingMinor: 250000,
         currency: 'IQD',
-        interestRateBps: 0,
         status: 'partial',
         paymentCount: 1,
         version: 2,

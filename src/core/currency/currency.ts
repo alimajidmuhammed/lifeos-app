@@ -1,5 +1,28 @@
 export type CurrencyCode = 'IQD' | 'USD' | 'EUR';
-export type SupportedLocale = 'en' | 'ar' | 'ckb';
+export type SupportedLocale =
+  | 'en'
+  | 'ar'
+  | 'ckb'
+  | 'kmr'
+  | 'fa'
+  | 'tr'
+  | 'ru'
+  | 'id'
+  | 'es'
+  | 'de';
+
+const INTL_LOCALE_MAP: Record<SupportedLocale, string> = {
+  en: 'en-US',
+  ar: 'ar-IQ-u-nu-latn',
+  ckb: 'ckb-IQ-u-nu-latn',
+  kmr: 'ckb-IQ-u-nu-latn',
+  fa: 'fa-IR-u-nu-latn',
+  tr: 'tr-TR',
+  ru: 'ru-RU',
+  id: 'id-ID',
+  es: 'es-ES',
+  de: 'de-DE',
+};
 
 export interface CurrencyMeta {
   code: CurrencyCode;
@@ -83,14 +106,16 @@ export function formatMoney(
 ): string {
   const major = fromMinorUnits(minorAmount, currency);
   const { minorDecimals } = CURRENCY_META[currency];
-  const intlLocale = locale === 'ar' ? 'ar-IQ-u-nu-latn' : locale === 'ckb' ? 'ckb-IQ-u-nu-latn' : 'en-US';
+  const intlLocale = INTL_LOCALE_MAP[locale] ?? 'en-US';
   const formattedNumber = new Intl.NumberFormat(intlLocale, {
     minimumFractionDigits: minorDecimals,
     maximumFractionDigits: minorDecimals,
   }).format(major);
 
   if (currency === 'IQD') {
-    return locale === 'ar' || locale === 'ckb' ? `${formattedNumber} د.ع` : `${formattedNumber} IQD`;
+    return locale === 'ar' || locale === 'ckb' || locale === 'kmr' || locale === 'fa'
+      ? `${formattedNumber} د.ع`
+      : `${formattedNumber} IQD`;
   }
   if (currency === 'USD') {
     return `$${formattedNumber}`;

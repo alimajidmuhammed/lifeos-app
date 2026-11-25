@@ -23,7 +23,7 @@ interface DebtFormModalProps {
   onUpdate: (
     current: DebtRecord,
     patch: Partial<
-      Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'interestRateBps' | 'dueDate' | 'notes'>
+      Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'dueDate' | 'notes'>
     >
   ) => Promise<void>;
 }
@@ -51,7 +51,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
   const [amountInput, setAmountInput] = useState('');
   const [currency, setCurrency] = useState<CurrencyCode>(profile.primaryCurrency);
   const [category, setCategory] = useState<DebtCategory>('personal');
-  const [aprInput, setAprInput] = useState('0');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -77,7 +76,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       setAmountInput(String(fromMinorUnits(editingDebt.principalMinor, editingDebt.currency)));
       setCurrency(editingDebt.currency);
       setCategory(editingDebt.category);
-      setAprInput((editingDebt.interestRateBps / 100).toString());
       setDueDate(editingDebt.dueDate ?? '');
       setNotes(editingDebt.notes ?? '');
     } else {
@@ -87,7 +85,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       setAmountInput('');
       setCurrency(profile.primaryCurrency);
       setCategory('personal');
-      setAprInput('0');
       setDueDate('');
       setNotes('');
     }
@@ -139,7 +136,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
     setAmountInput(String(draft.amountMajor));
     setCurrency(draft.currency);
     setCategory(draft.category);
-    setAprInput(String(draft.interestRatePercent ?? 0));
     setDueDate(draft.dueDate ?? '');
     setNotes(draft.notes ?? '');
     setAiNotice(draft.confidenceNote || t('debts.aiDraftNotice'));
@@ -166,13 +162,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
       return;
     }
 
-    const aprVal = Number(aprInput || '0');
-    if (!Number.isFinite(aprVal) || aprVal < 0 || aprVal > 100) {
-      setFormError('APR must be between 0% and 100%.');
-      return;
-    }
-    const interestRateBps = Math.round(aprVal * 100);
-
     setSaving(true);
     try {
       if (editingDebt) {
@@ -180,7 +169,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           personName: cleanName,
           personPhone: personPhone.trim() || undefined,
           category,
-          interestRateBps,
           dueDate: dueDate || undefined,
           notes: notes.trim() || undefined,
         });
@@ -199,7 +187,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           category,
           principalMinor,
           currency,
-          interestRateBps,
           dueDate: dueDate || undefined,
           notes: notes.trim() || undefined,
         });
@@ -247,7 +234,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                   <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
                   <span>{t('debts.aiQuickEntry')}</span>
                 </span>
-                <span className="text-[11px] text-[var(--text-muted)]">EN · AR · CKB</span>
+                <span className="text-[11px] text-[var(--text-muted)]">Multilingual</span>
               </div>
               <div className="flex gap-2">
                 <input
@@ -376,8 +363,8 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
               </div>
             </div>
 
-            {/* Category, Due Date, APR */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Category & Due Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
                   {t('debts.category')}
@@ -403,21 +390,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full min-h-[42px] font-numeric rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-secondary)] mb-1">
-                  {t('debts.aprLabel')}
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={aprInput}
-                  onChange={(e) => setAprInput(e.target.value)}
                   className="w-full min-h-[42px] font-numeric rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>

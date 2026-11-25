@@ -85,7 +85,6 @@ test('Unified Monthly Calendar merges Tasks, Reminders, and Open Debts on exact 
       principalMinor: 100000,
       remainingMinor: 50000,
       currency: 'IQD',
-      interestRateBps: 0,
       dueDate: '2026-11-15',
       status: 'partial',
       paymentCount: 1,

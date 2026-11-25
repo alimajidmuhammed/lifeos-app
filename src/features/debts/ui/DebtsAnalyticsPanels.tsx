@@ -153,7 +153,7 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
   const { t } = useTranslation();
   const locale = useUIStore((s) => s.profile.locale);
 
-  const [strategy, setStrategy] = useState<PayoffStrategy>('avalanche');
+  const [strategy, setStrategy] = useState<PayoffStrategy>('smallest_first');
   const defaultBudgetMajor = primaryCurrency === 'IQD' ? '500000' : '350';
   const [budgetInput, setBudgetInput] = useState(defaultBudgetMajor);
 
@@ -163,18 +163,17 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
     return toMinorUnits(val, primaryCurrency);
   }, [budgetInput, primaryCurrency]);
 
-  const snowballPlan = useMemo(
-    () => computePayoffPlan(debts, 'snowball', budgetMinor, primaryCurrency, fxRates),
+  const smallestFirstPlan = useMemo(
+    () => computePayoffPlan(debts, 'smallest_first', budgetMinor, primaryCurrency, fxRates),
     [debts, budgetMinor, primaryCurrency, fxRates]
   );
 
-  const avalanchePlan = useMemo(
-    () => computePayoffPlan(debts, 'avalanche', budgetMinor, primaryCurrency, fxRates),
+  const dueSoonestPlan = useMemo(
+    () => computePayoffPlan(debts, 'due_soonest', budgetMinor, primaryCurrency, fxRates),
     [debts, budgetMinor, primaryCurrency, fxRates]
   );
 
-  const activePlan = strategy === 'snowball' ? snowballPlan : avalanchePlan;
-  const interestDiff = snowballPlan.totalInterestPrimaryMinor - avalanchePlan.totalInterestPrimaryMinor;
+  const activePlan = strategy === 'smallest_first' ? smallestFirstPlan : dueSoonestPlan;
 
   const openIOweCount = debts.filter(
     (d) => d.direction === 'i_owe' && d.remainingMinor > 0 && d.status !== 'settled'
@@ -187,7 +186,7 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
           No open &ldquo;{t('debts.iOwe')}&rdquo; debts to schedule
         </p>
         <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Add any personal loan, installment, or balance you owe to compare Snowball vs. Avalanche payoff timelines.
+          Add any personal loan, installment, or balance you owe to compare Smallest-First vs. Due-Soonest payoff timelines.
         </p>
       </div>
     );
@@ -195,7 +194,7 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
 
   return (
     <div className="space-y-5">
-      {/* Controls & Side-by-Side Comparison */}
+      {/* Controls & Summary */}
       <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -213,7 +212,7 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
           </div>
 
           <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[var(--bg-subtle)]">
-            {(['avalanche', 'snowball'] as PayoffStrategy[]).map((s) => (
+            {(['smallest_first', 'due_soonest'] as PayoffStrategy[]).map((s) => (
               <button
                 key={s}
                 type="button"
@@ -224,13 +223,13 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
                     : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                 }`}
               >
-                {s === 'avalanche' ? t('debts.avalanche') : t('debts.snowball')}
+                {s === 'smallest_first' ? t('debts.smallestFirst') : t('debts.dueSoonest')}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px rounded-xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-px rounded-xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden">
           <div className="bg-[var(--bg-canvas)] p-4">
             <div className="text-xs text-[var(--text-muted)]">{t('debts.monthsToFree')}</div>
             <div className="mt-1 font-numeric text-xl font-bold text-[var(--text-primary)]">
@@ -238,17 +237,9 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
             </div>
           </div>
           <div className="bg-[var(--bg-canvas)] p-4">
-            <div className="text-xs text-[var(--text-muted)]">{t('debts.estInterest')}</div>
-            <div className="mt-1 font-numeric text-xl font-bold text-[var(--text-primary)]">
-              {formatMoney(activePlan.totalInterestPrimaryMinor, primaryCurrency, locale)}
-            </div>
-          </div>
-          <div className="bg-[var(--bg-canvas)] p-4">
-            <div className="text-xs text-[var(--text-muted)]">{t('debts.interestSaved')}</div>
+            <div className="text-xs text-[var(--text-muted)]">{t('debts.totalBalance')}</div>
             <div className="mt-1 font-numeric text-xl font-bold text-[var(--accent)]">
-              {interestDiff > 0
-                ? formatMoney(interestDiff, primaryCurrency, locale)
-                : formatMoney(0, primaryCurrency, locale)}
+              {formatMoney(activePlan.totalPrincipalPrimaryMinor, primaryCurrency, locale)}
             </div>
           </div>
         </div>
@@ -259,12 +250,10 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
         <table className="w-full text-start border-collapse">
           <thead>
             <tr className="border-b border-[var(--border-hairline)] text-xs font-medium text-[var(--text-muted)]">
-              <th className="py-3 px-4 text-start">Order</th>
-              <th className="py-3 px-4 text-start">Lender</th>
-              <th className="py-3 px-4 text-end">Balance</th>
-              <th className="py-3 px-4 text-end">APR</th>
-              <th className="py-3 px-4 text-end">Est. Interest</th>
-              <th className="py-3 px-4 text-end">Payoff Month</th>
+              <th className="py-3 px-4 text-start">#</th>
+              <th className="py-3 px-4 text-start">{t('debts.personOrLender')}</th>
+              <th className="py-3 px-4 text-end">{t('debts.remainingLabel')}</th>
+              <th className="py-3 px-4 text-end">{t('debts.payoffMonthLabel')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--border-hairline)] text-sm">
@@ -279,14 +268,8 @@ export const PayoffPlannerPanel: React.FC<PayoffPlannerPanelProps> = ({
                 <td className="py-3 px-4 text-end font-numeric text-[var(--text-primary)]">
                   {formatMoney(item.remainingOriginalMinor, item.currency, locale)}
                 </td>
-                <td className="py-3 px-4 text-end font-numeric text-[var(--text-secondary)]">
-                  {(item.interestRateBps / 100).toFixed(2)}%
-                </td>
-                <td className="py-3 px-4 text-end font-numeric text-[var(--text-secondary)]">
-                  {formatMoney(item.estimatedInterestPrimaryMinor, primaryCurrency, locale)}
-                </td>
                 <td className="py-3 px-4 text-end font-numeric font-semibold text-[var(--accent)]">
-                  {item.payoffMonth > 0 ? `Month ${item.payoffMonth}` : '>120 mo'}
+                  {item.payoffMonth > 0 ? `${item.payoffMonth} mo` : '>120 mo'}
                 </td>
               </tr>
             ))}

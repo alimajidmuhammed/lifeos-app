@@ -358,7 +358,6 @@ export const AICommandPalette: React.FC = () => {
             category,
             principalMinor: toMinorUnits(amountMajor, currency),
             currency,
-            interestRateBps: 0,
             dueDate,
             notes,
           });

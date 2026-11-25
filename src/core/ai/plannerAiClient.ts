@@ -31,7 +31,7 @@ export interface PlannerAiFailure {
 
 export async function requestGoalBreakdown(params: {
   goal: string;
-  locale: 'en' | 'ar' | 'ckb';
+  locale: import('../currency/currency').SupportedLocale;
   todayYmd: string;
   freeTier: boolean;
 }): Promise<PlannerAiResponse<PlannerBreakdownDraft> | PlannerAiFailure> {

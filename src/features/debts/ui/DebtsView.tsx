@@ -556,11 +556,6 @@ export const DebtsView: React.FC = () => {
                         <span className="font-numeric">
                           {debt.dueDate ? `${t('debts.dueDate')} ${debt.dueDate}` : t('debts.noDueDate')}
                         </span>
-                        {debt.interestRateBps > 0 && (
-                          <span className="font-numeric">
-                            · APR {(debt.interestRateBps / 100).toFixed(1)}%
-                          </span>
-                        )}
                         {prob && (
                           <span
                             className={`font-numeric ${

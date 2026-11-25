@@ -78,7 +78,7 @@ export function useDebts() {
     async (
       current: DebtRecord,
       patch: Partial<
-        Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'interestRateBps' | 'dueDate' | 'notes'>
+        Pick<DebtRecord, 'personName' | 'personPhone' | 'category' | 'dueDate' | 'notes'>
       >
     ) => repo.updateDebtMeta(activeUid, current, patch),
     [repo, activeUid]

@@ -84,7 +84,7 @@ export interface DebtsRepository {
     patch: Partial<
       Pick<
         import('../../core/debts/debtSchemas').DebtRecord,
-        'personName' | 'personPhone' | 'category' | 'interestRateBps' | 'dueDate' | 'notes'
+        'personName' | 'personPhone' | 'category' | 'dueDate' | 'notes'
       >
     >
   ): Promise<void>;

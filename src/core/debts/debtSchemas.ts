@@ -44,7 +44,6 @@ export const DebtRecordSchema = z
     principalMinor: z.number().int().positive().max(1_000_000_000_000),
     remainingMinor: z.number().int().min(0).max(1_000_000_000_000),
     currency: CurrencyCodeSchema,
-    interestRateBps: z.number().int().min(0).max(10_000),
     dueDate: z.string().regex(DATE_YMD_REGEX).optional(),
     status: DebtStatusSchema,
     notes: z.string().max(2000).optional(),
@@ -103,7 +102,6 @@ export const CreateDebtInputSchema = z.object({
   category: DebtCategorySchema.default('personal'),
   principalMinor: z.number().int().positive('Amount must be greater than zero').max(1_000_000_000_000),
   currency: CurrencyCodeSchema,
-  interestRateBps: z.number().int().min(0).max(10_000).default(0),
   dueDate: z.string().regex(DATE_YMD_REGEX).optional(),
   notes: z.string().max(2000).optional(),
 });
@@ -127,7 +125,6 @@ export const AIParsedDebtDraftSchema = z.object({
   currency: CurrencyCodeSchema,
   category: DebtCategorySchema.default('personal'),
   dueDate: z.string().regex(DATE_YMD_REGEX).nullable().optional(),
-  interestRatePercent: z.number().min(0).max(100).optional().default(0),
   notes: z.string().max(500).nullable().optional(),
   confidenceNote: z.string().max(240).nullable().optional(),
 });

@@ -28,11 +28,30 @@ const AI_RUNTIME_CONFIG = {
   promptVersion: 'lifeos-v1.0',
 };
 
+const LOCALE_SCHEMA = z.enum(['en', 'ar', 'ckb', 'kmr', 'fa', 'tr', 'ru', 'id', 'es', 'de']);
+
+const LOCALE_DISPLAY_NAMES: Record<z.infer<typeof LOCALE_SCHEMA>, string> = {
+  en: 'English',
+  ar: 'Arabic',
+  ckb: 'Central Kurdish (Sorani, Arabic script)',
+  kmr: 'Northern Kurdish (Behdini / Badini, Arabic script)',
+  fa: 'Persian (Farsi)',
+  tr: 'Turkish',
+  ru: 'Russian',
+  id: 'Indonesian',
+  es: 'Spanish',
+  de: 'German',
+};
+
+function getLocaleDisplayName(locale: z.infer<typeof LOCALE_SCHEMA>): string {
+  return LOCALE_DISPLAY_NAMES[locale] ?? 'English';
+}
+
 const aiRequestSchema = z.object({
   module: z.enum(['assistant', 'debts', 'reminders', 'planner', 'notes', 'vault', 'habits', 'finance']),
   taskType: z.enum(['briefing', 'parse', 'explain', 'draft', 'classify']).default('explain'),
   text: z.string().min(1).max(4000),
-  locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+  locale: LOCALE_SCHEMA.default('en'),
   hasAttachmentImage: z.boolean().default(false),
   containsLockedOrE2E: z.boolean().default(false),
   containsVaultSensitiveDoc: z.boolean().default(false),
@@ -201,12 +220,7 @@ async function createServer() {
       return;
     }
 
-    const localeLabel =
-      payload.locale === 'ar'
-        ? 'Arabic'
-        : payload.locale === 'ckb'
-          ? 'Central Kurdish (Sorani)'
-          : 'English';
+    const localeLabel = getLocaleDisplayName(payload.locale);
 
     const systemInstruction = [
       'You are the embedded assistant inside LifeOS, a personal life manager.',
@@ -289,7 +303,7 @@ async function createServer() {
   // Phase 2 Debts AI: Natural-language debt entry parser (returns preview draft only, never writes DB)
   const debtParseReqSchema = z.object({
     text: z.string().trim().min(2).max(1000),
-    locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+    locale: LOCALE_SCHEMA.default('en'),
     defaultCurrency: z.enum(['IQD', 'USD', 'EUR']).default('IQD'),
     todayYmd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   });
@@ -301,7 +315,6 @@ async function createServer() {
     currency: z.enum(['IQD', 'USD', 'EUR']),
     category: z.enum(['personal', 'family', 'business', 'loan', 'bill_split', 'other']).default('personal'),
     dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional().default(null),
-    interestRatePercent: z.number().min(0).max(100).optional().default(0),
     notes: z.string().max(500).nullable().optional().default(null),
     confidenceNote: z.string().max(240).nullable().optional().default(null),
   });
@@ -370,7 +383,6 @@ async function createServer() {
                 currency: { type: Type.STRING, description: 'IQD, USD, or EUR' },
                 category: { type: Type.STRING, description: 'personal, family, business, loan, bill_split, or other' },
                 dueDate: { type: Type.STRING, nullable: true, description: 'YYYY-MM-DD or null' },
-                interestRatePercent: { type: Type.NUMBER, nullable: true },
                 notes: { type: Type.STRING, nullable: true },
                 confidenceNote: { type: Type.STRING, nullable: true },
               },
@@ -419,7 +431,7 @@ async function createServer() {
     dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
     daysOverdue: z.number().int().min(0).max(3650).default(0),
     tone: z.enum(['gentle', 'firm', 'formal']).default('gentle'),
-    language: z.enum(['en', 'ar', 'ckb']).default('en'),
+    language: LOCALE_SCHEMA.default('en'),
     contextNote: z.string().max(300).optional(),
   });
 
@@ -461,12 +473,7 @@ async function createServer() {
       return;
     }
 
-    const langName =
-      payload.language === 'ar'
-        ? 'Natural modern Arabic (suitable for WhatsApp/SMS in Iraq/Middle East)'
-        : payload.language === 'ckb'
-          ? 'Natural Central Kurdish (Sorani, Arabic script, warm and respectful)'
-          : 'Clear, natural English';
+    const langName = `Natural ${getLocaleDisplayName(payload.language)} (warm, respectful, suitable for WhatsApp/SMS)`;
 
     const systemInstruction = [
       `Draft a short, culturally respectful WhatsApp/SMS message in ${langName}.`,
@@ -547,7 +554,7 @@ async function createServer() {
   // Phase 3 Reminders AI: Natural-language recurrence & reminder parser (preview draft only)
   const reminderParseReqSchema = z.object({
     text: z.string().trim().min(2).max(1000),
-    locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+    locale: LOCALE_SCHEMA.default('en'),
     nowLocalIso: z.string().min(10).max(32),
   });
 
@@ -672,7 +679,7 @@ async function createServer() {
   // Phase 4 Planner AI: Goal-to-subtasks breakdown (returns confirmation-gated draft only)
   const plannerBreakdownReqSchema = z.object({
     goal: z.string().trim().min(3).max(1000),
-    locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+    locale: LOCALE_SCHEMA.default('en'),
     todayYmd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   });
 
@@ -718,12 +725,7 @@ async function createServer() {
       return;
     }
 
-    const langLabel =
-      payload.locale === 'ar'
-        ? 'Arabic'
-        : payload.locale === 'ckb'
-          ? 'Central Kurdish (Sorani)'
-          : 'English';
+    const langLabel = getLocaleDisplayName(payload.locale);
 
     const systemInstruction = [
       `Break a personal goal into one clear actionable parent task with 3 to 7 concrete subtasks in ${langLabel}.`,
@@ -798,7 +800,7 @@ async function createServer() {
     title: z.string().trim().min(1).max(200),
     content: z.string().min(1).max(6000),
     mode: z.enum(['summarize', 'action_items', 'polish']),
-    locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+    locale: LOCALE_SCHEMA.default('en'),
     isLockedOrEncrypted: z.boolean().default(false),
   });
 
@@ -842,12 +844,7 @@ async function createServer() {
       return;
     }
 
-    const langLabel =
-      payload.locale === 'ar'
-        ? 'Arabic'
-        : payload.locale === 'ckb'
-          ? 'Central Kurdish (Sorani)'
-          : 'English';
+    const langLabel = getLocaleDisplayName(payload.locale);
 
     const modeDirective =
       payload.mode === 'action_items'
@@ -930,7 +927,7 @@ async function createServer() {
   // Phase 6 Finance AI: Natural-language income/expense entry parser (returns preview draft only)
   const financeParseReqSchema = z.object({
     text: z.string().trim().min(2).max(1000),
-    locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+    locale: LOCALE_SCHEMA.default('en'),
     defaultCurrency: z.enum(['IQD', 'USD', 'EUR']).default('IQD'),
     todayYmd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   });
@@ -1073,7 +1070,7 @@ async function createServer() {
   // Phase 6 Global AI Tool-Calling Assistant (Gemini Function Calling + Client-Side Deterministic Tools)
   const assistantToolsReqSchema = z.object({
     query: z.string().trim().min(1).max(2000),
-    locale: z.enum(['en', 'ar', 'ckb']).default('en'),
+    locale: LOCALE_SCHEMA.default('en'),
     todayYmd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     primaryCurrency: z.enum(['IQD', 'USD', 'EUR']).default('IQD'),
     toolResults: z
@@ -1214,12 +1211,7 @@ async function createServer() {
       return;
     }
 
-    const localeLabel =
-      payload.locale === 'ar'
-        ? 'Arabic'
-        : payload.locale === 'ckb'
-          ? 'Central Kurdish (Sorani)'
-          : 'English';
+    const localeLabel = getLocaleDisplayName(payload.locale);
 
     const startedAt = Date.now();
     const orderedModels = [AI_RUNTIME_CONFIG.primaryModel, AI_RUNTIME_CONFIG.liteModel];

@@ -28,6 +28,7 @@ import { DEFAULT_FEATURE_FLAGS } from '../../../core/entitlements/entitlements';
 import type { AiModuleToggles } from '../../../core/schemas/userProfileSchema';
 import { persistProfilePatch } from '../../../hooks/useLifeOS';
 import { exportJsonNativeOrWeb } from '../../../core/native/mobileBridge';
+import { SUPPORTED_LANGUAGES } from '../../../core/i18n/i18n';
 import { useUIStore, type ThemeMode } from '../../../state/useUIStore';
 import { PWAInstallButton } from '../../../components/PWAInstallButton';
 import {
@@ -383,7 +384,7 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="p-6 space-y-4">
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Globe className="h-4 w-4 text-[var(--accent)]" />
@@ -396,15 +397,9 @@ export const SettingsView: React.FC = () => {
           <div
             role="group"
             aria-label={t('settings.languageTitle')}
-            className="inline-flex items-center gap-1 rounded-xl bg-[var(--bg-subtle)] p-1"
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2"
           >
-            {(
-              [
-                { id: 'en', label: 'English (LTR)' },
-                { id: 'ar', label: 'العربية (RTL)' },
-                { id: 'ckb', label: 'کوردی (RTL)' },
-              ] as const
-            ).map((lang) => {
+            {SUPPORTED_LANGUAGES.map((lang) => {
               const active = profile.locale === lang.id;
               return (
                 <button
@@ -412,13 +407,18 @@ export const SettingsView: React.FC = () => {
                   type="button"
                   aria-pressed={active}
                   onClick={() => handleLocaleSelect(lang.id)}
-                  className={`min-h-[38px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
+                  className={`min-h-[46px] flex flex-col items-start justify-center rounded-xl border px-3 py-2 text-start transition-colors ${
                     active
-                      ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                      ? 'border-[var(--accent)] bg-[var(--accent-muted)] text-[var(--text-primary)] shadow-xs'
+                      : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]'
                   }`}
                 >
-                  {lang.label}
+                  <span className="text-xs font-semibold leading-tight truncate w-full">
+                    {lang.nativeName}
+                  </span>
+                  <span className="mt-0.5 text-[10px] text-[var(--text-muted)] leading-tight truncate w-full">
+                    {lang.englishName} · {lang.rtl ? 'RTL' : 'LTR'}
+                  </span>
                 </button>
               );
             })}

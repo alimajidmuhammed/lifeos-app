@@ -32,7 +32,7 @@ export async function requestNoteAssist(params: {
   title: string;
   content: string;
   mode: NoteAiMode;
-  locale: 'en' | 'ar' | 'ckb';
+  locale: import('../currency/currency').SupportedLocale;
   isLockedOrEncrypted: boolean;
   freeTier: boolean;
 }): Promise<NoteAiSuccess | NoteAiFailure> {

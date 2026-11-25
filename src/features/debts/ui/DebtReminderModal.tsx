@@ -159,28 +159,22 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
               <span className="block text-xs font-medium text-[var(--text-secondary)] mb-1.5">
                 Message Language
               </span>
-              <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[var(--bg-subtle)]">
-                {(
-                  [
-                    { id: 'en', label: 'EN' },
-                    { id: 'ar', label: 'عربي' },
-                    { id: 'ckb', label: 'کوردی' },
-                  ] as const
-                ).map((lang) => (
-                  <button
-                    key={lang.id}
-                    type="button"
-                    onClick={() => setLanguage(lang.id)}
-                    className={`min-h-[36px] rounded-lg text-xs font-medium transition-colors ${
-                      language === lang.id
-                        ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
-                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
-              </div>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as SupportedLocale)}
+                className="w-full min-h-[38px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+              >
+                <option value="en">English</option>
+                <option value="ar">العربية</option>
+                <option value="ckb">کوردی سۆرانی</option>
+                <option value="kmr">کوردی بادینی</option>
+                <option value="fa">فارسی</option>
+                <option value="tr">Türkçe</option>
+                <option value="ru">Русский</option>
+                <option value="id">Bahasa Indonesia</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+              </select>
             </div>
 
             <div>
@@ -232,7 +226,7 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
               </div>
             )}
             <textarea
-              dir={language === 'en' ? 'ltr' : 'rtl'}
+              dir={language === 'ar' || language === 'ckb' || language === 'kmr' || language === 'fa' ? 'rtl' : 'ltr'}
               rows={5}
               value={message}
               onChange={(e) => setMessage(e.target.value)}

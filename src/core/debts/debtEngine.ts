@@ -277,7 +277,7 @@ export function buildPersonLedgerRollups(
     .sort((a, b) => b.activeCount - a.activeCount || a.personName.localeCompare(b.personName));
 }
 
-export type PayoffStrategy = 'snowball' | 'avalanche';
+export type PayoffStrategy = 'smallest_first' | 'due_soonest';
 
 export interface PayoffPlanItem {
   debtId: string;
@@ -285,9 +285,7 @@ export interface PayoffPlanItem {
   currency: CurrencyCode;
   remainingOriginalMinor: number;
   remainingPrimaryMinor: number;
-  interestRateBps: number;
   payoffMonth: number; // 1-indexed month when balance reaches 0, or -1 if > maxMonths
-  estimatedInterestPrimaryMinor: number;
 }
 
 export interface PayoffPlanResult {
@@ -297,12 +295,11 @@ export interface PayoffPlanResult {
   totalMonths: number;
   cappedAtMaxMonths: boolean;
   totalPrincipalPrimaryMinor: number;
-  totalInterestPrimaryMinor: number;
   items: PayoffPlanItem[];
 }
 
 /**
- * Deterministic Snowball (smallest balance first) vs. Avalanche (highest APR first) payoff planner
+ * Deterministic Smallest-First (quick wins) vs. Due-Soonest payoff planner
  * for open `i_owe` debts converted into the user's primary currency in integer minor units.
  */
 export function computePayoffPlan(
@@ -323,7 +320,6 @@ export function computePayoffPlan(
       totalMonths: 0,
       cappedAtMaxMonths: false,
       totalPrincipalPrimaryMinor: 0,
-      totalInterestPrimaryMinor: 0,
       items: [],
     };
   }
@@ -335,24 +331,21 @@ export function computePayoffPlan(
       debt: d,
       initialPrimary: primaryRemaining,
       balance: primaryRemaining,
-      interestAccrued: 0,
       payoffMonth: -1,
     };
   });
 
   // Sort strictly deterministically
   working.sort((a, b) => {
-    if (strategy === 'snowball') {
+    if (strategy === 'smallest_first') {
       return (
         a.initialPrimary - b.initialPrimary ||
-        b.debt.interestRateBps - a.debt.interestRateBps ||
         (a.debt.dueDate ?? '9999-99-99').localeCompare(b.debt.dueDate ?? '9999-99-99')
       );
     }
     return (
-      b.debt.interestRateBps - a.debt.interestRateBps ||
-      a.initialPrimary - b.initialPrimary ||
-      (a.debt.dueDate ?? '9999-99-99').localeCompare(b.debt.dueDate ?? '9999-99-99')
+      (a.debt.dueDate ?? '9999-99-99').localeCompare(b.debt.dueDate ?? '9999-99-99') ||
+      a.initialPrimary - b.initialPrimary
     );
   });
 
@@ -362,16 +355,7 @@ export function computePayoffPlan(
   while (month < maxMonths && working.some((w) => w.balance > 0)) {
     month += 1;
 
-    // 1. Accrue monthly interest in integer minor units (APR bps / 10000 / 12)
-    for (const w of working) {
-      if (w.balance > 0 && w.debt.interestRateBps > 0) {
-        const monthlyInterest = Math.round((w.balance * w.debt.interestRateBps) / 120_000);
-        w.balance += monthlyInterest;
-        w.interestAccrued += monthlyInterest;
-      }
-    }
-
-    // 2. Apply monthly budget sequentially according to strategy order
+    // Apply monthly budget sequentially according to strategy order
     let budgetLeft = Math.round(monthlyBudgetPrimaryMinor);
     for (const w of working) {
       if (budgetLeft <= 0) break;
@@ -386,7 +370,6 @@ export function computePayoffPlan(
   }
 
   const cappedAtMaxMonths = working.some((w) => w.balance > 0);
-  const totalInterestPrimaryMinor = working.reduce((sum, w) => sum + w.interestAccrued, 0);
 
   return {
     strategy,
@@ -395,16 +378,13 @@ export function computePayoffPlan(
     totalMonths: month,
     cappedAtMaxMonths,
     totalPrincipalPrimaryMinor,
-    totalInterestPrimaryMinor,
     items: working.map((w) => ({
       debtId: w.debt.id,
       personName: w.debt.personName,
       currency: w.debt.currency,
       remainingOriginalMinor: w.debt.remainingMinor,
       remainingPrimaryMinor: w.initialPrimary,
-      interestRateBps: w.debt.interestRateBps,
       payoffMonth: w.payoffMonth,
-      estimatedInterestPrimaryMinor: w.interestAccrued,
     })),
   };
 }
@@ -531,7 +511,6 @@ export function exportDebtsToCsv(debts: DebtRecord[], todayYmd: string = getToda
     'Currency',
     'PrincipalMinor',
     'RemainingMinor',
-    'APR_Percent',
     'DueDate',
     'EffectiveStatus',
     'PaymentCount',
@@ -547,7 +526,6 @@ export function exportDebtsToCsv(debts: DebtRecord[], todayYmd: string = getToda
     d.currency,
     d.principalMinor,
     d.remainingMinor,
-    (d.interestRateBps / 100).toFixed(2),
     d.dueDate ?? '',
     computeEffectiveStatus(d, todayYmd),
     d.paymentCount,

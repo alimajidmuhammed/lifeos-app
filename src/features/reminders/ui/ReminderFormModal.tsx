@@ -356,7 +356,7 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
                   <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
                   <span>{t('reminders.aiQuickSchedule')}</span>
                 </span>
-                <span className="text-[11px] text-[var(--text-muted)]">EN · AR · CKB</span>
+                <span className="text-[11px] text-[var(--text-muted)]">Multilingual</span>
               </div>
               <div className="flex gap-2">
                 <input

@@ -69,7 +69,7 @@ export const RollingQueuePanel: React.FC<{
                 <BellRing className="h-3.5 w-3.5 text-[var(--accent)]" />
                 <span>{t('reminders.testNotifBtn')}</span>
               </button>
-            ) : notifPermission === 'default' ? (
+            ) : !isNativePlatform() && notifPermission === 'default' ? (
               <button
                 type="button"
                 onClick={() => void onRequestPermission()}

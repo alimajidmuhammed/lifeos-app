@@ -209,32 +209,25 @@ export const RemindersView: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              if (notifPermission === 'granted') {
-                handleSendTest();
-              } else {
-                void handleRequestNotif();
-              }
-            }}
-            className={`inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap ${
-              notifPermission === 'granted'
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15'
-                : 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300 hover:bg-amber-500/20'
-            }`}
-          >
-            <Bell className="h-4 w-4" />
-            <span>
-              {notifPermission === 'granted'
-                ? isNativePlatform()
-                  ? 'Test Native Alert'
-                  : 'Test Push Alert'
-                : notifPermission === 'denied'
-                  ? 'Alerts Blocked'
-                  : 'Enable Phone Alerts'}
-            </span>
-          </button>
+          {notifPermission === 'granted' ? (
+            <button
+              type="button"
+              onClick={handleSendTest}
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 transition-colors whitespace-nowrap"
+            >
+              <Bell className="h-4 w-4" />
+              <span>{isNativePlatform() ? 'Test Native Alert' : 'Test Push Alert'}</span>
+            </button>
+          ) : notifPermission === 'denied' ? (
+            <button
+              type="button"
+              onClick={() => void handleRequestNotif()}
+              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
+            >
+              <Bell className="h-4 w-4" />
+              <span>Alerts Off</span>
+            </button>
+          ) : null}
 
           <button
             type="button"

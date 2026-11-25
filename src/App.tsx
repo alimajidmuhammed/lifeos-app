@@ -12,7 +12,10 @@ import {
   registerNativeKeyboardListener,
   syncNativeStatusBar,
 } from './core/native/mobileBridge';
-import { registerNotificationTapListener } from './core/reminders/nativeNotifications';
+import {
+  checkOrRequestNativeNotificationPermission,
+  registerNotificationTapListener,
+} from './core/reminders/nativeNotifications';
 
 const DebtsView = lazy(() => import('./features/debts/ui/DebtsView').then((m) => ({ default: m.DebtsView })));
 const RemindersView = lazy(() => import('./features/reminders/ui/RemindersView').then((m) => ({ default: m.RemindersView })));
@@ -37,6 +40,7 @@ function LifeOSWorkspace() {
 
   useEffect(() => {
     void hideNativeSplashScreen();
+    void checkOrRequestNativeNotificationPermission();
   }, []);
 
   useEffect(() => {

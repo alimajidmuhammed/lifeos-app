@@ -45,11 +45,16 @@ export function useReminders() {
   );
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
 
-  // Sync real native OS notification permission on mount (bypasses window.Notification in WebView)
+  // Sync & auto-request native OS notification permission on mount (bypasses window.Notification in WebView)
   useEffect(() => {
     if (!isNativePlatform()) return;
-    void getNativeNotificationPermissionState().then((state) => {
-      setNotifPermission(state);
+    void getNativeNotificationPermissionState().then(async (state) => {
+      if (state === 'default') {
+        const requested = await checkOrRequestNativeNotificationPermission();
+        setNotifPermission(requested);
+      } else {
+        setNotifPermission(state);
+      }
     });
   }, []);
 

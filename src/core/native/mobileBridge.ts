@@ -154,3 +154,18 @@ export async function captureNativePhotoDataUrl(): Promise<string | null> {
     return null;
   }
 }
+
+export function registerNativeAppResumeListener(onResume: () => void): () => void {
+  if (!isNativeApp()) return () => {};
+
+  let handle: { remove: () => Promise<void> } | null = null;
+  void CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) onResume();
+  }).then((h) => {
+    handle = h;
+  });
+
+  return () => {
+    void handle?.remove();
+  };
+}

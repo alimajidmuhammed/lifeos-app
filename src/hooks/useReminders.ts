@@ -11,6 +11,7 @@ import {
   getNativeNotificationPermissionState,
   isNativePlatform,
 } from '../core/reminders/nativeNotifications';
+import { registerNativeAppResumeListener } from '../core/native/mobileBridge';
 import {
   playNotificationChime,
   showForegroundLocalNotification,
@@ -46,16 +47,23 @@ export function useReminders() {
   );
   const [nowTick, setNowTick] = useState<number>(() => Date.now());
 
-  // Sync & auto-request native OS notification permission on mount (bypasses window.Notification in WebView)
+  // Sync & auto-request native OS notification permission on mount & app resume
   useEffect(() => {
     if (!isNativePlatform()) return;
-    void getNativeNotificationPermissionState().then(async (state) => {
-      if (state === 'default') {
-        const requested = await checkOrRequestNativeNotificationPermission();
-        setNotifPermission(requested);
-      } else {
-        setNotifPermission(state);
-      }
+    const syncNativePerm = () => {
+      void getNativeNotificationPermissionState().then(async (state) => {
+        if (state === 'default') {
+          const requested = await checkOrRequestNativeNotificationPermission();
+          setNotifPermission(requested);
+        } else {
+          setNotifPermission(state);
+        }
+      });
+    };
+    syncNativePerm();
+    return registerNativeAppResumeListener(() => {
+      setNowTick(Date.now());
+      syncNativePerm();
     });
   }, []);
 

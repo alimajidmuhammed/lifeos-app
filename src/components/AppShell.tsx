@@ -13,6 +13,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  Plus,
   Settings,
   Sparkles,
   Wallet,
@@ -23,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { useUIStore, type NavRoute } from '../state/useUIStore';
 import { useOnlineStatus } from '../hooks/useLifeOS';
 import { authRepository } from '../data/repositories/firebaseWebAdapter';
+import { hapticLight, hapticMedium } from '../core/native/mobileBridge';
 import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavItem {
@@ -274,14 +276,18 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
       {/* Main Content Column */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Bar: Compact 52px on mobile, 64px 3-zone header on desktop */}
-        <header className="sticky top-0 z-30 h-[52px] lg:h-16 border-b border-[var(--border-hairline)] bg-[var(--bg-surface)]/90 backdrop-blur-md px-3 sm:px-4 lg:px-8 flex items-center justify-between gap-3">
+        {/* Top Bar: Safe-area aware sticky header */}
+        <header className="sticky top-0 z-30 pt-safe border-b border-[var(--border-hairline)] bg-[var(--bg-surface)]/90 backdrop-blur-md">
+          <div className="h-[52px] lg:h-16 px-3 sm:px-4 lg:px-8 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
             {/* Mobile Burger Menu Button */}
             <button
               type="button"
               aria-label="Open navigation menu"
-              onClick={() => setMobileMoreOpen(true)}
+              onClick={() => {
+                void hapticLight();
+                setMobileMoreOpen(true);
+              }}
               className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring shrink-0"
             >
               <Menu className="h-5 w-5" />
@@ -304,15 +310,32 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {pinEnabled && (
+              <button
+                type="button"
+                aria-label={t('settings.pinLockNowBtn')}
+                onClick={() => {
+                  void hapticMedium();
+                  lockApp();
+                }}
+                className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:text-[var(--text-primary)] btn-spring"
+              >
+                <Lock className="h-4 w-4" />
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => setCommandPaletteOpen(true)}
-              className="inline-flex min-h-[38px] sm:min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
+              onClick={() => {
+                void hapticLight();
+                setCommandPaletteOpen(true);
+              }}
+              className="hidden sm:inline-flex min-h-[38px] sm:min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] btn-spring transition-colors whitespace-nowrap shrink-0"
             >
               <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
               <span>{t('common.quickAction')}</span>
               <kbd className="hidden sm:inline font-numeric text-[11px] opacity-80 ms-1">⌘K</kbd>
             </button>
+          </div>
           </div>
         </header>
 
@@ -333,11 +356,25 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </main>
       </div>
 
-      {/* Mobile Bottom Tab Bar (60px height; combined with 52px header = 112px <= 15% of 844px) */}
+      {/* Mobile Quick-Action Floating Action Button (thumb-friendly) */}
+      <button
+        type="button"
+        aria-label={t('common.quickAction')}
+        onClick={() => {
+          void hapticMedium();
+          setCommandPaletteOpen(true);
+        }}
+        className="sm:hidden fixed bottom-[76px] end-4 z-30 h-13 w-13 rounded-2xl bg-[var(--accent)] text-white shadow-lg shadow-emerald-600/25 flex items-center justify-center hover:bg-[var(--accent-hover)] btn-spring"
+      >
+        <Plus className="h-6 w-6" />
+      </button>
+
+      {/* Mobile Bottom Tab Bar (Material 3 / iOS-style active pill + safe-area) */}
       <nav
         aria-label="Mobile navigation"
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 h-[60px] pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md grid grid-cols-5 items-center"
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md"
       >
+        <div className="h-[62px] grid grid-cols-5 items-center px-1">
         {MOBILE_PRIMARY_TABS.map((tabId) => {
           const item = ALL_NAV_ITEMS.find((i) => i.id === tabId)!;
           const Icon = item.icon;
@@ -346,12 +383,21 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <button
               key={tabId}
               type="button"
-              onClick={() => setActiveRoute(tabId)}
-              className={`min-h-[44px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-                isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'
+              onClick={() => {
+                void hapticLight();
+                setActiveRoute(tabId);
+              }}
+              className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors btn-spring ${
+                isActive ? 'text-[var(--accent)] font-semibold' : 'text-[var(--text-muted)]'
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <span
+                className={`inline-flex items-center justify-center rounded-full px-3.5 py-1 transition-colors ${
+                  isActive ? 'bg-[var(--accent-soft)]' : ''
+                }`}
+              >
+                <Icon className="h-[19px] w-[19px]" />
+              </span>
               <span className="truncate max-w-[64px]">{t(item.labelKey)}</span>
             </button>
           );
@@ -359,16 +405,28 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
         <button
           type="button"
-          onClick={() => setMobileMoreOpen(true)}
-          className={`min-h-[44px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors ${
-            mobileMoreOpen || activeRoute === 'settings'
-              ? 'text-[var(--accent)]'
+          onClick={() => {
+            void hapticLight();
+            setMobileMoreOpen(true);
+          }}
+          className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors btn-spring ${
+            mobileMoreOpen || (!MOBILE_PRIMARY_TABS.includes(activeRoute))
+              ? 'text-[var(--accent)] font-semibold'
               : 'text-[var(--text-muted)]'
           }`}
         >
-          <LayoutGrid className="h-5 w-5" />
+          <span
+            className={`inline-flex items-center justify-center rounded-full px-3.5 py-1 transition-colors ${
+              mobileMoreOpen || (!MOBILE_PRIMARY_TABS.includes(activeRoute))
+                ? 'bg-[var(--accent-soft)]'
+                : ''
+            }`}
+          >
+            <LayoutGrid className="h-[19px] w-[19px]" />
+          </span>
           <span>{t('nav.more')}</span>
         </button>
+        </div>
       </nav>
 
       {/* Mobile Drawer (Clean, elegant, full module navigation) */}

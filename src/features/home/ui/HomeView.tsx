@@ -30,6 +30,7 @@ import { useVault } from '../../../hooks/useVault';
 import { useHabits } from '../../../hooks/useHabits';
 import { useFinance } from '../../../hooks/useFinance';
 import { useUIStore, type NavRoute } from '../../../state/useUIStore';
+import { hapticLight } from '../../../core/native/mobileBridge';
 
 export const HomeView: React.FC = () => {
   const { t } = useTranslation();
@@ -62,6 +63,7 @@ export const HomeView: React.FC = () => {
   }, []);
 
   const triggerCardSweep = (cardId: string) => {
+    void hapticLight();
     setTouchedCard(cardId);
     window.setTimeout(() => {
       setTouchedCard((curr) => (curr === cardId ? null : curr));

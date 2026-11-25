@@ -11,6 +11,7 @@ import type {
   RollingSchedulerSnapshot,
 } from '../../../core/reminders/notificationScheduler';
 import type { BrowserNotificationState } from '../../../hooks/useReminders';
+import { isNativePlatform } from '../../../core/reminders/nativeNotifications';
 
 function formatSlotTime(iso: string, locale: string): string {
   const d = new Date(iso);
@@ -103,11 +104,19 @@ export const RollingQueuePanel: React.FC<{
           </div>
         </div>
 
-        {/* Honest Platform Trade-Off Note */}
+        {/* Platform Delivery Mode Note */}
         <div className="flex items-start gap-2.5 pt-2 border-t border-[var(--border-hairline)] text-xs text-[var(--text-secondary)]">
           <Info className="h-4 w-4 text-[var(--text-muted)] shrink-0 mt-0.5" />
           <p>
-            <strong>Web PWA vs. Native Delivery:</strong> This exact deterministic 64-slot queue feeds iOS <code className="font-numeric">UNUserNotificationCenter</code> and Android <code className="font-numeric">AlarmManager</code> in native Expo EAS builds. In a web browser tab, local notifications fire while LifeOS is open; guaranteed closed-app background alarms require the native build or server push (FCM).
+            {isNativePlatform() ? (
+              <>
+                <strong>Native Mobile Alarms Active:</strong> This 64-slot queue is synced directly to your device&apos;s OS alarm scheduler (<code className="font-numeric">LocalNotifications</code>) for 100% offline lock-screen alerts even when the app is closed.
+              </>
+            ) : (
+              <>
+                <strong>Web Browser Mode vs. Native App:</strong> In a web browser tab, alerts rely on browser notification permissions. When installed as the native Android/iOS app, this exact 64-slot queue schedules OS-level offline alarms automatically.
+              </>
+            )}
           </p>
         </div>
       </div>

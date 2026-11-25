@@ -27,6 +27,8 @@ import { describeRRule } from '../../../core/reminders/rruleEngine';
 import { useDebts } from '../../../hooks/useDebts';
 import { useReminders } from '../../../hooks/useReminders';
 import { useUIStore } from '../../../state/useUIStore';
+import { hapticLight, hapticSuccess } from '../../../core/native/mobileBridge';
+import { isNativePlatform } from '../../../core/reminders/nativeNotifications';
 import { ReminderFormModal } from './ReminderFormModal';
 import {
   ChannelsDirectoryPanel,
@@ -115,6 +117,7 @@ export const RemindersView: React.FC = () => {
   }, [reminders, statusFilter, categoryFilter, searchQuery]);
 
   const handleCompleteToggle = async (rem: ReminderItem) => {
+    void hapticSuccess();
     if (rem.isCompleted) {
       await reopenReminder(rem);
       showToast(`Reopened "${rem.title}".`);
@@ -131,6 +134,7 @@ export const RemindersView: React.FC = () => {
   };
 
   const handleQuickSnooze = async (rem: ReminderItem, mode: '15m' | '1h' | 'tomorrow9') => {
+    void hapticLight();
     let target: Date;
     if (mode === '15m') {
       target = new Date(Date.now() + 15 * 60 * 1000);
@@ -148,6 +152,7 @@ export const RemindersView: React.FC = () => {
   };
 
   const handleDeleteWithUndo = async (rem: ReminderItem) => {
+    void hapticLight();
     await deleteReminder(rem);
     showToast(`Deleted "${rem.title}".`, () => {
       void restoreReminder(rem);
@@ -155,9 +160,10 @@ export const RemindersView: React.FC = () => {
   };
 
   const handleRequestNotif = async () => {
+    void hapticLight();
     const res = await requestBrowserNotifications();
     if (res === 'granted') {
-      showToast('Browser notifications enabled.');
+      showToast(isNativePlatform() ? 'Native device alarms enabled.' : 'Browser notifications enabled.');
     } else if (res === 'denied') {
       showToast('Browser notifications were blocked in site settings.');
     }

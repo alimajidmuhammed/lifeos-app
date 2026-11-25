@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AppShell } from './components/AppShell';
 import { AICommandPalette } from './components/AICommandPalette';
@@ -15,10 +15,30 @@ import { SettingsView } from './features/settings/ui/SettingsView';
 import { ModuleReadinessView } from './features/modules/ui/ModuleReadinessView';
 import { useLifeOSSync } from './hooks/useLifeOS';
 import { useUIStore } from './state/useUIStore';
+import { registerNativeBackHandler, syncNativeStatusBar } from './core/native/mobileBridge';
 
 function LifeOSWorkspace() {
   useLifeOSSync();
   const activeRoute = useUIStore((s) => s.activeRoute);
+  const theme = useUIStore((s) => s.profile.theme);
+
+  useEffect(() => {
+    void syncNativeStatusBar(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    return registerNativeBackHandler(() => {
+      const s = useUIStore.getState();
+      return {
+        commandPaletteOpen: s.commandPaletteOpen,
+        mobileMoreOpen: s.mobileMoreOpen,
+        activeRoute: s.activeRoute,
+        closeCommandPalette: () => s.setCommandPaletteOpen(false),
+        closeMobileMore: () => s.setMobileMoreOpen(false),
+        goHome: () => s.setActiveRoute('home'),
+      };
+    });
+  }, []);
 
   return (
     <>

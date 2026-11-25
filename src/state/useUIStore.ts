@@ -8,6 +8,7 @@ import {
 import { PLAN_CATALOG, type PlanEntitlements } from '../core/entitlements/entitlements';
 import type { AuthUserSummary, AiUsageRecord } from '../data/repositories/interfaces';
 import i18n, { applyDocumentLocale } from '../core/i18n/i18n';
+import { syncNativeStatusBar } from '../core/native/mobileBridge';
 
 export type NavRoute =
   | 'home'
@@ -60,6 +61,7 @@ export function applyDocumentTheme(theme: ThemeMode): void {
     if (theme === 'dark') root.classList.add('dark');
     if (theme === 'amoled') root.classList.add('dark', 'amoled');
   }
+  void syncNativeStatusBar(theme);
   try {
     localStorage.setItem('lifeos_theme', theme);
   } catch {

@@ -452,7 +452,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 void hapticLight();
                 setNotifOpen(true);
               }}
-              className="relative inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring"
+              className="relative inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring"
             >
               <Bell className="h-[18px] w-[18px]" />
               {unreadCount > 0 && (

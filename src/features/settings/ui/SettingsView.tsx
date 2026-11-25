@@ -66,6 +66,11 @@ export const SettingsView: React.FC = () => {
   const fontScale = useUIStore((s) => s.fontScale);
   const setFontScale = useUIStore((s) => s.setFontScale);
 
+  // Display name state
+  const [displayNameInput, setDisplayNameInput] = useState(
+    profile.displayName && profile.displayName !== 'Personal Workspace' ? profile.displayName : ''
+  );
+
   // PIN form state
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -315,6 +320,42 @@ export const SettingsView: React.FC = () => {
               );
             })}
           </div>
+        </div>
+
+        {/* Editable Display Name */}
+        <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              {t('home.displayNameLabel')}
+            </h2>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+              Shown in your Home screen greeting.
+            </p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const cleaned = displayNameInput.trim();
+              void persistProfilePatch({ displayName: cleaned || 'Personal Workspace' });
+              showToast(t('home.displayNameSaved'));
+            }}
+            className="flex items-center gap-2 w-full sm:w-auto"
+          >
+            <input
+              type="text"
+              maxLength={60}
+              value={displayNameInput}
+              onChange={(e) => setDisplayNameInput(e.target.value)}
+              placeholder={t('home.displayNamePlaceholder')}
+              className="flex-1 sm:w-48 min-h-[42px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
+            />
+            <button
+              type="submit"
+              className="min-h-[42px] rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)] transition-colors whitespace-nowrap"
+            >
+              {t('common.save')}
+            </button>
+          </form>
         </div>
 
         {/* Custom Font Size Scale (85% to 125%) */}

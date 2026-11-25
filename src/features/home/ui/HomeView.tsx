@@ -73,6 +73,7 @@ export const HomeView: React.FC = () => {
   const [briefingOpen, setBriefingOpen] = useState(false);
   const [briefingLoading, setBriefingLoading] = useState(false);
   const [briefingResult, setBriefingResult] = useState<AIResult | null>(null);
+  const [onboardingExpanded, setOnboardingExpanded] = useState(false);
   const [onboardingDismissed, setOnboardingDismissed] = useState<boolean>(() => {
     try {
       return localStorage.getItem(ONBOARDING_DISMISSED_KEY) === '1';
@@ -86,12 +87,16 @@ export const HomeView: React.FC = () => {
   const quota = evaluateDailyAiQuota(usedToday, entitlements);
   const debtMetrics = aggregateDebtMetrics(debts, profile.primaryCurrency, fxRates, dayKey);
 
-  // Extract clean first name (never show generic "Personal Workspace")
+  // Extract clean, capitalized first name (never show generic "Personal Workspace")
   const firstName = useMemo(() => {
-    const raw = authUser?.displayName || profile.displayName || '';
+    const raw =
+      (profile.displayName && profile.displayName.toLowerCase() !== 'personal workspace'
+        ? profile.displayName
+        : authUser?.displayName) || '';
     const trimmed = raw.trim();
     if (!trimmed || trimmed.toLowerCase() === 'personal workspace') return '';
-    return trimmed.split(/\s+/)[0];
+    const first = trimmed.split(/\s+/)[0];
+    return first.charAt(0).toUpperCase() + first.slice(1);
   }, [authUser?.displayName, profile.displayName]);
 
   const formattedToday = useMemo(() => {
@@ -257,6 +262,7 @@ export const HomeView: React.FC = () => {
   );
 
   const onboardingDoneCount = onboardingSteps.filter((s) => s.done).length;
+  const nextOnboardingStep = onboardingSteps.find((s) => !s.done) ?? null;
   const showOnboarding = !onboardingDismissed && onboardingDoneCount < onboardingSteps.length;
 
   const dismissOnboarding = () => {
@@ -442,21 +448,9 @@ export const HomeView: React.FC = () => {
         </div>
       </section>
 
-      {/* ── 2. Quick Capture Row (horizontally scrollable on mobile, never wraps) ── */}
-      <section aria-label={t('home.quickCaptureLabel')}>
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
-          <button
-            type="button"
-            onClick={() => {
-              void hapticLight();
-              setCommandPaletteOpen(true);
-            }}
-            className="min-h-[44px] shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--accent-hover)] btn-spring whitespace-nowrap"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>{t('home.chipAskAi')}</span>
-          </button>
-
+      {/* ── 2. Quick Capture Row (horizontally scrollable with edge fade, single AI entry in header) ── */}
+      <section aria-label={t('home.quickCaptureLabel')} className="relative">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 pe-10 -mx-1 px-1">
           {(
             [
               { label: t('home.chipExpense'), icon: Plus, route: 'finance' as NavRoute },
@@ -483,67 +477,99 @@ export const HomeView: React.FC = () => {
             );
           })}
         </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 end-0 w-10 bg-gradient-to-l rtl:bg-gradient-to-r from-[var(--bg-canvas)] to-transparent"
+        />
       </section>
 
-      {/* ── 3. Dismissible First-Run Onboarding Checklist ── */}
+      {/* ── 3. Slim Collapsible First-Run Setup Row (expands on tap) ── */}
       {showOnboarding && (
         <section
           aria-label={t('home.onboardingTitle')}
-          className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5 space-y-3"
+          className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] overflow-hidden"
         >
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">
-                {t('home.onboardingTitle')}
-              </h2>
-              <p className="text-xs text-[var(--text-muted)] tabular-nums-ui">
-                {t('home.onboardingProgress', {
+          <button
+            type="button"
+            onClick={() => {
+              void hapticLight();
+              setOnboardingExpanded((prev) => !prev);
+            }}
+            className="w-full min-h-[48px] px-4 py-2.5 flex items-center justify-between gap-3 text-start hover:bg-[var(--bg-subtle)]/40 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="w-14 h-1.5 rounded-full bg-[var(--bg-subtle)] overflow-hidden shrink-0">
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
+                  style={{ width: `${Math.round((onboardingDoneCount / onboardingSteps.length) * 100)}%` }}
+                />
+              </div>
+              <span className="tabular-nums-ui text-xs font-semibold text-[var(--text-secondary)] shrink-0">
+                {t('home.setupProgress', {
                   done: onboardingDoneCount,
                   total: onboardingSteps.length,
                 })}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={dismissOnboarding}
-              className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-xl text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] px-2.5"
-            >
-              <X className="h-4 w-4 me-1" />
-              <span>{t('home.onboardingDismiss')}</span>
-            </button>
-          </div>
-
-          <div className="divide-y divide-[var(--border-hairline)]">
-            {onboardingSteps.map((step) => (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => {
-                  void hapticLight();
-                  setActiveRoute(step.route);
-                }}
-                className="w-full min-h-[44px] py-2.5 flex items-center justify-between gap-3 text-start hover:bg-[var(--bg-subtle)]/50 rounded-lg px-2 -mx-2 transition-colors"
-              >
-                <span className="flex items-center gap-3 min-w-0">
-                  {step.done ? (
-                    <CheckCircle2 className="h-5 w-5 text-[var(--status-ok)] shrink-0" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-[var(--text-muted)] shrink-0" />
-                  )}
-                  <span
-                    className={`text-sm truncate ${
-                      step.done
-                        ? 'line-through text-[var(--text-muted)]'
-                        : 'font-medium text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {step.label}
-                  </span>
+              </span>
+              {nextOnboardingStep && (
+                <span className="text-xs text-[var(--text-muted)] truncate">
+                  · {nextOnboardingStep.label}
                 </span>
-                <ArrowRight className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
-              </button>
-            ))}
-          </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1 text-[var(--text-muted)] shrink-0">
+              {onboardingExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ArrowRight className="h-4 w-4" />
+              )}
+            </div>
+          </button>
+
+          {onboardingExpanded && (
+            <div className="px-4 pb-3 pt-2 border-t border-[var(--border-hairline)] space-y-2">
+              <div className="divide-y divide-[var(--border-hairline)]">
+                {onboardingSteps.map((step) => (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => {
+                      void hapticLight();
+                      setActiveRoute(step.route);
+                    }}
+                    className="w-full min-h-[44px] py-2 flex items-center justify-between gap-3 text-start hover:bg-[var(--bg-subtle)]/50 rounded-lg px-2 -mx-2 transition-colors"
+                  >
+                    <span className="flex items-center gap-3 min-w-0">
+                      {step.done ? (
+                        <CheckCircle2 className="h-5 w-5 text-[var(--status-ok)] shrink-0" />
+                      ) : (
+                        <Circle className="h-5 w-5 text-[var(--text-muted)] shrink-0" />
+                      )}
+                      <span
+                        className={`text-sm truncate ${
+                          step.done
+                            ? 'text-[var(--text-muted)]'
+                            : 'font-medium text-[var(--text-primary)]'
+                        }`}
+                      >
+                        {step.label}
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
+                  </button>
+                ))}
+              </div>
+              <div className="pt-1 flex justify-end">
+                <button
+                  type="button"
+                  onClick={dismissOnboarding}
+                  className="min-h-[40px] inline-flex items-center gap-1 rounded-xl px-3 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>{t('home.onboardingDismiss')}</span>
+                </button>
+              </div>
+            </div>
+          )}
         </section>
       )}
 

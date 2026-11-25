@@ -1,8 +1,10 @@
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { Keyboard } from '@capacitor/keyboard';
+import { Share } from '@capacitor/share';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import type { ThemeMode } from '../../state/useUIStore';
@@ -168,4 +170,66 @@ export function registerNativeAppResumeListener(onResume: () => void): () => voi
   return () => {
     void handle?.remove();
   };
+}
+
+/**
+ * Exports a JSON string using native Filesystem + Share sheet on Android/iOS,
+ * falling back to a browser download blob on Web.
+ */
+export async function exportJsonNativeOrWeb(
+  filename: string,
+  jsonText: string
+): Promise<'native' | 'web'> {
+  if (isNativeApp()) {
+    try {
+      await Filesystem.writeFile({
+        path: filename,
+        data: jsonText,
+        directory: Directory.Cache,
+        encoding: Encoding.UTF8,
+      });
+      const { uri } = await Filesystem.getUri({
+        path: filename,
+        directory: Directory.Cache,
+      });
+      await Share.share({
+        title: filename,
+        text: 'LifeinOne Workspace Backup',
+        url: uri,
+        dialogTitle: 'Export LifeinOne Backup',
+      });
+      return 'native';
+    } catch {
+      // Fall through to web download fallback if native share is cancelled or unavailable
+    }
+  }
+
+  const blob = new Blob([jsonText], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  return 'web';
+}
+
+export async function shareTextNativeOrWeb(title: string, text: string): Promise<boolean> {
+  if (isNativeApp()) {
+    try {
+      await Share.share({ title, text, dialogTitle: title });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title, text });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }

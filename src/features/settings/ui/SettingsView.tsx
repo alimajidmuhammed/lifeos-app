@@ -13,6 +13,7 @@ import {
   Sun,
   Type,
   Unlock,
+  X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -26,6 +27,7 @@ import type { CurrencyCode, SupportedLocale } from '../../../core/currency/curre
 import { DEFAULT_FEATURE_FLAGS } from '../../../core/entitlements/entitlements';
 import type { AiModuleToggles } from '../../../core/schemas/userProfileSchema';
 import { persistProfilePatch } from '../../../hooks/useLifeOS';
+import { exportJsonNativeOrWeb } from '../../../core/native/mobileBridge';
 import { useUIStore, type ThemeMode } from '../../../state/useUIStore';
 import { PWAInstallButton } from '../../../components/PWAInstallButton';
 import {
@@ -70,6 +72,7 @@ export const SettingsView: React.FC = () => {
   const [displayNameInput, setDisplayNameInput] = useState(
     profile.displayName && profile.displayName !== 'Personal Workspace' ? profile.displayName : ''
   );
+  const [legalModal, setLegalModal] = useState<'privacy' | 'terms' | null>(null);
 
   // PIN form state
   const [pinInput, setPinInput] = useState('');
@@ -194,7 +197,7 @@ export const SettingsView: React.FC = () => {
     }
   };
 
-  const handleExportJson = () => {
+  const handleExportJson = async () => {
     const bundle = {
       exportedAt: new Date().toISOString(),
       schemaVersion: 1,
@@ -203,13 +206,8 @@ export const SettingsView: React.FC = () => {
       entitlements,
       featureFlags: DEFAULT_FEATURE_FLAGS,
     };
-    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `lifeos-export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const filename = `lifeinone-export-${new Date().toISOString().slice(0, 10)}.json`;
+    await exportJsonNativeOrWeb(filename, JSON.stringify(bundle, null, 2));
     showToast('Workspace JSON exported.');
   };
 
@@ -770,6 +768,78 @@ export const SettingsView: React.FC = () => {
           {t('home.shortcutsDesc')}
         </p>
       </section>
+
+      {/* 6. About & Legal */}
+      <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">
+            {t('settings.aboutTitle')}
+          </h2>
+          <span className="rounded-full bg-[var(--bg-subtle)] px-2.5 py-1 text-[11px] font-medium text-[var(--text-secondary)]">
+            {t('settings.versionLabel')}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setLegalModal('privacy')}
+            className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors"
+          >
+            {t('settings.privacyPolicyBtn')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setLegalModal('terms')}
+            className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors"
+          >
+            {t('settings.termsBtn')}
+          </button>
+        </div>
+      </section>
+
+      {legalModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs anim-modal-backdrop"
+          onClick={() => setLegalModal(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4 anim-modal-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                {legalModal === 'privacy'
+                  ? t('settings.privacyPolicyBtn')
+                  : t('settings.termsBtn')}
+              </h3>
+              <button
+                type="button"
+                aria-label={t('common.close')}
+                onClick={() => setLegalModal(null)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+              {legalModal === 'privacy'
+                ? t('settings.privacyPolicyBody')
+                : t('settings.termsBody')}
+            </p>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setLegalModal(null)}
+                className="min-h-[40px] rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)]"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

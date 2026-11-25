@@ -599,13 +599,66 @@ export const AICommandPalette: React.FC = () => {
                     <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                       {t('assistant.confirmationDesc')}
                     </p>
-                    <div className="mt-3 rounded-lg bg-[var(--bg-subtle)] p-3 text-xs space-y-1">
+                    <div className="mt-3 rounded-lg bg-[var(--bg-subtle)] p-3 text-xs space-y-2">
                       <div className="font-medium text-[var(--text-primary)]">
                         {result.proposedAction.title}
                       </div>
                       <div className="text-[var(--text-secondary)]">
                         {result.proposedAction.details}
                       </div>
+                      {result.proposedAction.actionType === 'create_debts' &&
+                        Array.isArray(
+                          (result.proposedAction.payload as Record<string, unknown>)?.items
+                        ) && (
+                          <div className="mt-2 max-h-52 overflow-y-auto rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-surface)] divide-y divide-[var(--border-hairline)]">
+                            {(
+                              (result.proposedAction.payload as Record<string, unknown>)
+                                .items as Array<Record<string, unknown>>
+                            ).map((item, idx) => {
+                              const direction =
+                                item.direction === 'they_owe_me' ? 'they_owe_me' : 'i_owe';
+                              const isOwedToMe = direction === 'they_owe_me';
+                              const person = String(item.personName || 'Contact');
+                              const amt = Number(item.amountMajor || 0);
+                              const curr = String(item.currency || 'USD').toUpperCase();
+                              const itemNotes =
+                                typeof item.notes === 'string' && item.notes.trim()
+                                  ? item.notes.trim()
+                                  : null;
+                              return (
+                                <div
+                                  key={`${person}-${curr}-${idx}`}
+                                  className="flex items-center justify-between gap-2 px-3 py-2"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="truncate font-medium text-[var(--text-primary)]">
+                                        {person}
+                                      </span>
+                                      <span
+                                        className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                                          isOwedToMe
+                                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
+                                        }`}
+                                      >
+                                        {isOwedToMe ? 'Owed to me' : 'I owe'}
+                                      </span>
+                                    </div>
+                                    {itemNotes && (
+                                      <div className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">
+                                        {itemNotes}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className="shrink-0 font-numeric font-semibold text-[var(--text-primary)]">
+                                    {amt.toLocaleString()} {curr}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       <div className="font-numeric text-[var(--text-muted)]">
                         Target: {result.proposedAction.module} · Action:{' '}
                         {result.proposedAction.actionType}

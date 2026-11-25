@@ -89,6 +89,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const notifOpen = useNotificationInboxStore((s) => s.open);
   const setNotifOpen = useNotificationInboxStore((s) => s.setOpen);
 
+  // ── Swipe-to-Dismiss for Mobile Bottom Drawer ──
+  const [drawerDragY, setDrawerDragY] = useState(0);
+  const drawerTouchStartY = useRef<number | null>(null);
+
   // ── Left-Edge Swipe-Back Gesture (works on Mobile Touch & Web Pointer) ──
   const [swipeProgress, setSwipeProgress] = useState(0); // 0..1
   const swipeStateRef = useRef<{
@@ -607,8 +611,34 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
           onClick={() => setMobileMoreOpen(false)}
         >
           <div
-            className="w-full max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5 pb-8 space-y-4 anim-bottom-sheet"
+            className="w-full max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5 pb-8 space-y-4 anim-bottom-sheet transition-transform duration-200"
+            style={
+              drawerDragY > 0
+                ? { transform: `translateY(${drawerDragY}px)`, transition: 'none' }
+                : undefined
+            }
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              if (e.currentTarget.scrollTop <= 0) {
+                drawerTouchStartY.current = e.touches[0].clientY;
+              } else {
+                drawerTouchStartY.current = null;
+              }
+            }}
+            onTouchMove={(e) => {
+              if (drawerTouchStartY.current === null) return;
+              const delta = e.touches[0].clientY - drawerTouchStartY.current;
+              if (delta > 0) {
+                setDrawerDragY(delta);
+              }
+            }}
+            onTouchEnd={() => {
+              if (drawerDragY > 85) {
+                setMobileMoreOpen(false);
+              }
+              setDrawerDragY(0);
+              drawerTouchStartY.current = null;
+            }}
           >
             <div className="mx-auto h-1.5 w-12 rounded-full bg-[var(--border-hairline)]" />
             

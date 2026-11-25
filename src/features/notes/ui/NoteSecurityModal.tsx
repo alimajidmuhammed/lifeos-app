@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Copy, KeyRound, Lock, ShieldCheck, X } from 'lucide-react';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface NoteSecurityModalProps {
   open: boolean;
@@ -84,13 +85,14 @@ export const NoteSecurityModal: React.FC<NoteSecurityModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={e2eConfigured ? 'Unlock E2E Notes Vault' : 'Enable Opt-In E2E Encryption'}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
-      onClick={handleClose}
-    >
+    <ModalPortal onClose={handleClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={e2eConfigured ? 'Unlock E2E Notes Vault' : 'Enable Opt-In E2E Encryption'}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
+        onClick={handleClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-md rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -220,5 +222,6 @@ export const NoteSecurityModal: React.FC<NoteSecurityModalProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

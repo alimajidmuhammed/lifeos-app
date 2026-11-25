@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, ShieldAlert, Sparkles, Trash2, X } from 'lucide-react';
+import { Bot, Plus, ShieldAlert, Sparkles, Trash2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { requestGoalBreakdown } from '../../../core/ai/plannerAiClient';
 import { evaluateDailyAiQuota, getTodayDayKey } from '../../../core/entitlements/entitlements';
@@ -12,6 +12,7 @@ import {
 } from '../../../core/planner/plannerSchemas';
 import { aiUsageRepository } from '../../../data/repositories/firebaseWebAdapter';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface TaskFormModalProps {
   open: boolean;
@@ -63,6 +64,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   const [newSubtaskText, setNewSubtaskText] = useState('');
 
   // AI Goal Breakdown state
+  const [aiOpen, setAiOpen] = useState(initialFocusAi);
   const [aiGoal, setAiGoal] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
@@ -77,6 +79,7 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
     setAiError(null);
     setAiNotice(null);
     setAiGoal('');
+    setAiOpen(initialFocusAi);
     setNewSubtaskText('');
 
     if (editingTask) {
@@ -217,13 +220,14 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={isEditing ? t('planner.editTask') : t('planner.addTask')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? t('planner.editTask') : t('planner.addTask')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
+        onClick={onClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-xl rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:my-auto sm:max-h-[90dvh] flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -232,19 +236,37 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
           <h2 className="text-base font-semibold text-[var(--text-primary)]">
             {isEditing ? t('planner.editTask') : t('planner.addTask')}
           </h2>
-          <button
-            type="button"
-            aria-label={t('common.close')}
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {!isEditing && (
+              <button
+                type="button"
+                aria-label={t('planner.aiGoalBreakdown')}
+                aria-pressed={aiOpen}
+                title={t('planner.aiGoalBreakdown')}
+                onClick={() => setAiOpen((v) => !v)}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors btn-spring ${
+                  aiOpen
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+                }`}
+              >
+                <Bot className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label={t('common.close')}
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 p-5 space-y-5 overflow-y-auto">
-          {!isEditing && (
-            <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
+          {!isEditing && aiOpen && (
+            <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3.5 space-y-2.5 anim-slide-up">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
@@ -467,5 +489,6 @@ export const TaskFormModal: React.FC<TaskFormModalProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

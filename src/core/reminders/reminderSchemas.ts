@@ -140,7 +140,7 @@ export const CreateReminderInputSchema = z.object({
   priority: ReminderPrioritySchema.default('normal'),
   dueAtIso: z.string().max(30).regex(ISO_UTC_REGEX),
   rrule: z.string().trim().max(200).optional(),
-  respectQuietHours: z.boolean().default(true),
+  respectQuietHours: z.boolean().default(false),
   linkedDebtId: z.string().min(1).max(128).regex(ID_REGEX).optional(),
 });
 

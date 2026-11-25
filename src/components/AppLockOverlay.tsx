@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Fingerprint, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useUIStore } from '../state/useUIStore';
-import { authenticateWebAuthn, hasWebAuthnCredential, isWebAuthnSupported } from '../core/auth/webauthn';
+import { ModalPortal } from './ModalPortal';
+import { authenticateWebAuthn, hasWebAuthnCredential, isBiometricAvailableAsync } from '../core/auth/webauthn';
 
 export const AppLockOverlay: React.FC = () => {
   const { t } = useTranslation();
@@ -15,11 +16,17 @@ export const AppLockOverlay: React.FC = () => {
   const [biometricBusy, setBiometricBusy] = useState(false);
 
   useEffect(() => {
-    if (isAppLocked && isWebAuthnSupported() && hasWebAuthnCredential()) {
-      setBiometricAvailable(true);
-    } else {
+    let mounted = true;
+    if (!isAppLocked || !hasWebAuthnCredential()) {
       setBiometricAvailable(false);
+      return;
     }
+    void isBiometricAvailableAsync().then((avail) => {
+      if (mounted) setBiometricAvailable(avail);
+    });
+    return () => {
+      mounted = false;
+    };
   }, [isAppLocked]);
 
   const handleBiometricUnlock = useCallback(async () => {
@@ -66,12 +73,13 @@ export const AppLockOverlay: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('lock.title')}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--bg-canvas)]/95 p-6 backdrop-blur-md anim-modal-backdrop"
-    >
+    <ModalPortal>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('lock.title')}
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-[var(--bg-canvas)]/95 p-6 backdrop-blur-md anim-modal-backdrop"
+      >
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 anim-modal-content"
@@ -131,5 +139,6 @@ export const AppLockOverlay: React.FC = () => {
         </button>
       </form>
     </div>
+    </ModalPortal>
   );
 };

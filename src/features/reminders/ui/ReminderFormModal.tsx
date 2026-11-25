@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BellRing, ShieldAlert, Sparkles, X } from 'lucide-react';
+import { BellRing, Bot, ShieldAlert, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { parseNaturalLanguageReminder } from '../../../core/ai/remindersAiClient';
 import { evaluateDailyAiQuota, getTodayDayKey } from '../../../core/entitlements/entitlements';
@@ -22,6 +22,7 @@ import {
 } from '../../../core/reminders/rruleEngine';
 import { aiUsageRepository } from '../../../data/repositories/firebaseWebAdapter';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface ReminderFormModalProps {
   open: boolean;
@@ -95,7 +96,7 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
   const [priority, setPriority] = useState<ReminderPriority>('normal');
   const [dateYmd, setDateYmd] = useState('');
   const [timeHHMM, setTimeHHMM] = useState('09:00');
-  const [respectQuietHours, setRespectQuietHours] = useState(true);
+  const [respectQuietHours, setRespectQuietHours] = useState(false);
   const [linkedDebtId, setLinkedDebtId] = useState('');
 
   // Structured Recurrence Builder state
@@ -106,6 +107,7 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
   const [countInput, setCountInput] = useState('');
 
   // AI Quick Schedule state
+  const [aiOpen, setAiOpen] = useState(initialFocusAi);
   const [aiText, setAiText] = useState('');
   const [aiParsing, setAiParsing] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
@@ -155,7 +157,7 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
       setPriority('normal');
       setDateYmd(toLocalDateYmd(defaultDate));
       setTimeHHMM(toLocalTimeHHMM(defaultDate));
-      setRespectQuietHours(true);
+      setRespectQuietHours(false);
       setLinkedDebtId('');
       setRepeatMode('none');
       setIntervalInput('1');
@@ -189,7 +191,6 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
     if (!isEditing) {
       const meta = getChannelMeta(nextCat);
       setPriority(meta.defaultPriority);
-      setRespectQuietHours(meta.defaultRespectQuietHours);
     }
   };
 
@@ -322,13 +323,14 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={isEditing ? t('reminders.editReminder') : t('reminders.addReminder')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? t('reminders.editReminder') : t('reminders.addReminder')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
+        onClick={onClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-xl rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:my-auto sm:max-h-[90dvh] flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -337,20 +339,38 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
           <h2 className="text-base font-semibold text-[var(--text-primary)]">
             {isEditing ? t('reminders.editReminder') : t('reminders.addReminder')}
           </h2>
-          <button
-            type="button"
-            aria-label={t('common.close')}
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {!isEditing && (
+              <button
+                type="button"
+                aria-label={t('reminders.aiQuickSchedule')}
+                aria-pressed={aiOpen}
+                title={t('reminders.aiQuickSchedule')}
+                onClick={() => setAiOpen((v) => !v)}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors btn-spring ${
+                  aiOpen
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+                }`}
+              >
+                <Bot className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label={t('common.close')}
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 p-5 space-y-5 overflow-y-auto">
-          {/* AI Natural Language Schedule Parser (Create mode only, confirmation-gated) */}
-          {!isEditing && (
-            <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
+          {/* AI Natural Language Schedule Parser (toggled by Robot icon) */}
+          {!isEditing && aiOpen && (
+            <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3.5 space-y-2.5 anim-slide-up">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
@@ -674,5 +694,6 @@ export const ReminderFormModal: React.FC<ReminderFormModalProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

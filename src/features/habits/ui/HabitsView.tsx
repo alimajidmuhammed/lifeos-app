@@ -27,6 +27,7 @@ import {
 } from '../../../core/habits/habitSchemas';
 import { useHabits } from '../../../hooks/useHabits';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 type HabitsTab = 'today' | 'heatmap' | 'insights';
 
@@ -249,53 +250,51 @@ export const HabitsView: React.FC = () => {
         </div>
       )}
 
-      {/* 4-Column Flat KPI Strip */}
+      {/* Emerald Streak Hero Strip (Distinct Habits Identity) */}
       <section
         aria-label="Habits KPI summary"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden"
+        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
       >
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('habits.kpiCompletedToday')}
+        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              {t('habits.kpiCompletedToday')}
+            </div>
+            <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
+              {summary.completedTodayCount} <span className="text-sm font-normal text-[var(--text-muted)]">/ {summary.activeCount}</span>
+            </div>
           </div>
-          <div className="mt-2 font-numeric text-xl sm:text-2xl font-semibold text-[var(--accent)]">
-            {summary.completedTodayCount} / {summary.activeCount}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">{todayYmd}</div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('habits.kpiActiveHabits')}
-          </div>
-          <div className="mt-2 font-numeric text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">
-            {summary.activeCount}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {habits.length - summary.activeCount} archived
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+            <Check className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('habits.kpiBestStreak')}
+        <div className="rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold text-orange-700 dark:text-orange-400">
+              {t('habits.kpiBestStreak')}
+            </div>
+            <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
+              {summary.bestActiveStreak}d
+            </div>
           </div>
-          <div className="mt-2 font-numeric text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">
-            {summary.bestActiveStreak}d
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/15 text-orange-500">
+            <Flame className="h-5 w-5" />
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">{t('ui.currentLeadingStreak')}</div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('habits.kpiConsistency30d')}
+        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4 sm:p-5 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[var(--text-muted)]">
+              {t('habits.kpiConsistency30d')}
+            </span>
+            <span className="font-numeric text-lg font-bold text-[var(--text-primary)]">
+              {summary.avgConsistency30dPct}%
+            </span>
           </div>
-          <div className="mt-2 font-numeric text-xl sm:text-2xl font-semibold text-[var(--text-primary)]">
-            {summary.avgConsistency30dPct}%
-          </div>
-          <div className="mt-2 h-1.5 w-full rounded-full bg-[var(--bg-subtle)] overflow-hidden">
+          <div className="mt-3 h-2 w-full rounded-full bg-[var(--bg-subtle)] overflow-hidden">
             <div
-              className="h-full rounded-full bg-[var(--accent)] transition-all duration-200"
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
               style={{ width: `${summary.avgConsistency30dPct}%` }}
             />
           </div>
@@ -304,7 +303,7 @@ export const HabitsView: React.FC = () => {
 
       {/* Underline Segmented Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-hairline)]">
-        <div className="flex items-center gap-6 overflow-x-auto">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar max-w-full">
           {(
             [
               { id: 'today', label: t('habits.tabToday'), icon: Flame },
@@ -594,7 +593,7 @@ export const HabitsView: React.FC = () => {
                 Weekday Break-Pattern Analysis (Past 8 Weeks)
               </h2>
               <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                100% deterministic local computation · Average streak before break:{' '}
+                Average streak before break:{' '}
                 <span className="font-numeric font-semibold text-[var(--text-primary)]">
                   {breakInsights.averageStreakBeforeBreak}d
                 </span>
@@ -655,13 +654,14 @@ export const HabitsView: React.FC = () => {
 
       {/* Add / Edit Habit Modal */}
       {modalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={editingHabit ? t('habits.editHabit') : t('habits.addHabit')}
-          className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
-          onClick={() => setModalOpen(false)}
-        >
+        <ModalPortal onClose={() => setModalOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={editingHabit ? t('habits.editHabit') : t('habits.addHabit')}
+            className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+            onClick={() => setModalOpen(false)}
+          >
           <div
             className="w-full h-dvh sm:h-auto sm:max-w-lg rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -802,6 +802,7 @@ export const HabitsView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

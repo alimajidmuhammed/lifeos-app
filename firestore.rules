@@ -29,7 +29,7 @@ service cloud.firestore {
     }
 
     function isValidLocale(val) {
-      return val in ['en', 'ar', 'ckb'];
+      return val in ['en', 'ar', 'ckb', 'kmr', 'fa', 'tr', 'ru', 'id', 'es', 'de'];
     }
 
     function isValidTheme(val) {
@@ -37,7 +37,7 @@ service cloud.firestore {
     }
 
     function isValidCurrency(val) {
-      return val in ['IQD', 'USD', 'EUR'];
+      return val is string && val.size() == 3 && val.matches('^[A-Z]{3}$');
     }
 
     function isValidDateYMD(val) {

@@ -85,6 +85,8 @@ export function useOnlineStatus() {
   return isOnline;
 }
 
+let pendingLocalLocaleOverride: UserProfileData['locale'] | null = null;
+
 /**
  * Bootstraps Firebase connectivity check, Auth listener, and real-time Firestore listeners
  * strictly scoped under users/{uid}/... when authenticated.
@@ -111,6 +113,15 @@ export function useLifeOSSync() {
       unsubUsage = null;
     };
 
+    const applyProfileWithLocalLocale = (prof: UserProfileData) => {
+      if (pendingLocalLocaleOverride && prof.locale !== pendingLocalLocaleOverride) {
+        setProfile({ ...prof, locale: pendingLocalLocaleOverride });
+      } else {
+        pendingLocalLocaleOverride = null;
+        setProfile(prof);
+      }
+    };
+
     const unsubAuth = authRepository.onAuthStateChanged(async (user) => {
       cleanupDataListeners();
       setAuthState(user, true);
@@ -119,13 +130,13 @@ export function useLifeOSSync() {
 
       try {
         const ensured = await userProfileRepository.ensureProfile(user);
-        setProfile(ensured);
+        applyProfileWithLocalLocale(ensured);
       } catch (err) {
         console.error('Failed to ensure Firestore user profile:', err);
       }
 
       unsubProfile = userProfileRepository.subscribeProfile(user.uid, (prof) => {
-        setProfile(prof);
+        applyProfileWithLocalLocale(prof);
       });
 
       unsubEntitlements = userProfileRepository.subscribeEntitlements(user.uid, (ent) => {
@@ -151,10 +162,21 @@ export function useLifeOSSync() {
 export async function persistProfilePatch(patch: Partial<UserProfileData>): Promise<void> {
   const state = useUIStore.getState();
   const prev = state.profile;
+  if (patch.locale) {
+    pendingLocalLocaleOverride = patch.locale;
+    try {
+      localStorage.setItem('lifeos_locale', patch.locale);
+    } catch {
+      // Ignore storage errors
+    }
+  }
   state.patchLocalProfile(patch);
   if (state.authUser) {
     try {
       await userProfileRepository.updateProfile(state.authUser.uid, prev, patch);
+      if (patch.locale) {
+        pendingLocalLocaleOverride = null;
+      }
     } catch (err) {
       console.error('Cloud profile update failed (local offline cache preserved):', err);
     }

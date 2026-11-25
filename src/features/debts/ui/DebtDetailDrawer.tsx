@@ -15,6 +15,7 @@ import {
 } from '../../../core/debts/debtEngine';
 import type { DebtLedger, DebtPayment, DebtRecord } from '../../../core/debts/debtSchemas';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface DebtDetailDrawerProps {
   debt: DebtRecord | null;
@@ -69,13 +70,14 @@ export const DebtDetailDrawer: React.FC<DebtDetailDrawerProps> = ({
     debt.direction === 'owed_to_me' ? estimateRepaymentProbability(debt, ledger) : null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={debt.personName}
-      className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-xs"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={debt.personName}
+        className="fixed inset-0 z-[60] flex justify-end bg-slate-950/50 backdrop-blur-xs"
+        onClick={onClose}
+      >
       <div
         className="w-full max-w-md h-dvh overflow-y-auto border-s border-[var(--border-hairline)] bg-[var(--bg-surface)] flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -185,7 +187,7 @@ export const DebtDetailDrawer: React.FC<DebtDetailDrawerProps> = ({
             <div className="space-y-2">
               <div className="flex items-baseline justify-between">
                 <h3 className="text-xs font-semibold text-[var(--text-primary)]">
-                  {t('debts.repaymentScore')} (Deterministic)
+                  {t('debts.repaymentScore')}
                 </h3>
                 <span
                   className={`font-numeric text-sm font-bold ${
@@ -284,5 +286,6 @@ export const DebtDetailDrawer: React.FC<DebtDetailDrawerProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

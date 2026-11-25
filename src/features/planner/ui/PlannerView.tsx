@@ -177,49 +177,48 @@ export const PlannerView: React.FC = () => {
         </div>
       </section>
 
-      {/* 4-Column Flat KPI Strip */}
+      {/* Sky Focus Summary Banner (Distinct Planner Identity) */}
       <section
         aria-label="Planner metrics"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden"
+        className="rounded-2xl border border-sky-500/25 bg-gradient-to-r from-sky-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4"
       >
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiActive')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
-            {summary.activeCount}
+        <div className="flex flex-wrap items-center gap-6 sm:gap-8">
+          <div>
+            <div className="text-xs font-semibold text-sky-700 dark:text-sky-400">{t('planner.kpiDueToday')}</div>
+            <div className="mt-1 font-numeric text-2xl font-bold text-[var(--text-primary)]">
+              {summary.dueTodayCount}
+            </div>
           </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {summary.inProgressCount} in progress
+          <div className="h-8 w-px bg-[var(--border-hairline)] hidden sm:block" />
+          <div>
+            <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiActive')}</div>
+            <div className="mt-1 font-numeric text-xl font-semibold text-[var(--text-primary)]">
+              {summary.activeCount}
+            </div>
           </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiDueToday')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--accent)]">
-            {summary.dueTodayCount}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {summary.overdueCount} overdue
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiCompleted')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
-            {summary.completedCount}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            of {summary.totalCount} total {summary.totalCount === 1 ? 'task' : 'tasks'}
+          <div className="h-8 w-px bg-[var(--border-hairline)] hidden sm:block" />
+          <div>
+            <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiCompleted')}</div>
+            <div className="mt-1 font-numeric text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+              {summary.completedCount} <span className="text-xs font-normal text-[var(--text-muted)]">/ {summary.totalCount}</span>
+            </div>
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiCalendarItems')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
-            {tasks.filter((x) => Boolean(x.dueDate) && x.status !== 'done').length +
-              reminders.filter((r) => !r.isCompleted).length}
+        <div className="w-full sm:w-44 space-y-1.5">
+          <div className="flex items-center justify-between text-[11px] font-medium text-[var(--text-muted)]">
+            <span>Progress</span>
+            <span className="font-numeric">
+              {summary.totalCount > 0 ? Math.round((summary.completedCount / summary.totalCount) * 100) : 0}%
+            </span>
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">
-            Tasks, reminders &amp; debt dates
+          <div className="h-2 w-full rounded-full bg-[var(--bg-subtle)] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-sky-500 transition-all duration-300"
+              style={{
+                width: `${summary.totalCount > 0 ? Math.round((summary.completedCount / summary.totalCount) * 100) : 0}%`,
+              }}
+            />
           </div>
         </div>
       </section>

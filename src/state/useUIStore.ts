@@ -19,6 +19,7 @@ export type NavRoute =
   | 'vault'
   | 'habits'
   | 'finance'
+  | 'qr'
   | 'settings';
 
 export type ThemeMode = 'light' | 'dark' | 'amoled';
@@ -117,6 +118,9 @@ interface UIState {
   setDensity: (d: 'comfortable' | 'compact') => void;
   fontScale: number;
   setFontScale: (scale: number) => void;
+  activeCurrencies: CurrencyCode[];
+  addActiveCurrency: (code: CurrencyCode) => void;
+  removeActiveCurrency: (code: CurrencyCode) => void;
 }
 
 const initialProfile = loadLocalProfile();
@@ -186,9 +190,37 @@ export function applyDocumentFontScale(scale: number): void {
   }
 }
 
+const LOCAL_ACTIVE_CURRENCIES_KEY = 'lifeos_active_currencies_v1';
+
+function loadActiveCurrencies(profile: UserProfileData): CurrencyCode[] {
+  const base = new Set<CurrencyCode>(['IQD', 'USD', 'EUR', profile.primaryCurrency, profile.secondaryCurrency]);
+  try {
+    const raw = localStorage.getItem(LOCAL_ACTIVE_CURRENCIES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        for (const c of parsed) {
+          if (typeof c === 'string' && /^[A-Z]{3}$/.test(c)) base.add(c);
+        }
+      }
+    }
+  } catch {
+    // Ignore
+  }
+  return Array.from(base);
+}
+
+function saveActiveCurrencies(list: CurrencyCode[]): void {
+  try {
+    localStorage.setItem(LOCAL_ACTIVE_CURRENCIES_KEY, JSON.stringify(list));
+  } catch {
+    // Ignore
+  }
+}
+
 // Initial apply
 if (typeof document !== 'undefined') {
-  applyDocumentDensity(initialDensity);
+  applyDocumentDensity('comfortable');
   applyDocumentFontScale(initialFontSize);
 }
 
@@ -301,7 +333,12 @@ export const useUIStore = create<UIState>((set, get) => ({
   setCurrencies: (primaryCurrency, secondaryCurrency) => {
     const next = { ...get().profile, primaryCurrency, secondaryCurrency };
     saveLocalProfile(next);
-    set({ profile: next });
+    const currSet = new Set(get().activeCurrencies);
+    currSet.add(primaryCurrency);
+    currSet.add(secondaryCurrency);
+    const nextList = Array.from(currSet);
+    saveActiveCurrencies(nextList);
+    set({ profile: next, activeCurrencies: nextList });
   },
 
   toggleAiModule: (moduleKey, enabled) => {
@@ -379,5 +416,26 @@ export const useUIStore = create<UIState>((set, get) => ({
   setFontScale: (fontScale) => {
     applyDocumentFontScale(fontScale);
     set({ fontScale });
+  },
+
+  activeCurrencies: loadActiveCurrencies(loadLocalProfile()),
+
+  addActiveCurrency: (code) => {
+    const clean = code.trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(clean)) return;
+    const curr = get().activeCurrencies;
+    if (curr.includes(clean)) return;
+    const next = [...curr, clean];
+    saveActiveCurrencies(next);
+    set({ activeCurrencies: next });
+  },
+
+  removeActiveCurrency: (code) => {
+    const { profile, activeCurrencies } = get();
+    if (code === profile.primaryCurrency || code === profile.secondaryCurrency) return;
+    const next = activeCurrencies.filter((c) => c !== code);
+    if (next.length === 0) return;
+    saveActiveCurrencies(next);
+    set({ activeCurrencies: next });
   },
 }));

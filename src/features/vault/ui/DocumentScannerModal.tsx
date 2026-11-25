@@ -34,6 +34,7 @@ import {
   type VaultDocType,
   type VaultFolder,
 } from '../../../core/vault/vaultSchemas';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface ScannedPage {
   id: string;
@@ -502,13 +503,14 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
   const activePage = pages[activePageIdx];
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('vault.addDocument')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
-      onClick={resetAndClose}
-    >
+    <ModalPortal onClose={resetAndClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('vault.addDocument')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
+        onClick={resetAndClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-3xl rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:my-auto sm:max-h-[90dvh] flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -519,7 +521,7 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
               {t('vault.addDocument')}
             </h2>
             <p className="text-xs text-[var(--text-muted)]">
-              Local-Only Vault · Raw files stay on-device (Zero Blaze storage billing)
+              Private On-Device Vault · Files stay safely on your device
             </p>
           </div>
           <button
@@ -835,21 +837,21 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
                   placeholder="e.g. Iraqi Passport — Main Holder"
                   className="flex-1 min-h-[42px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 />
-                <button
-                  type="button"
-                  aria-label="Confirm document title"
-                  title={confirmedFlags.title ? 'Confirmed' : 'Confirm value'}
-                  onClick={() => toggleConfirmField('title')}
-                  className={`h-[42px] w-[42px] shrink-0 inline-flex items-center justify-center rounded-xl border transition-colors ${
-                    confirmedFlags.title
-                      ? 'border-emerald-600 bg-emerald-600 text-white'
-                      : extractedFlags.title
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
-                        : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                  }`}
-                >
-                  <Check className="h-4 w-4" />
-                </button>
+                {extractedFlags.title && (
+                  <button
+                    type="button"
+                    aria-label="Confirm document title"
+                    title={confirmedFlags.title ? 'Confirmed' : 'Confirm value'}
+                    onClick={() => toggleConfirmField('title')}
+                    className={`h-[42px] w-[42px] shrink-0 inline-flex items-center justify-center rounded-xl border transition-colors ${
+                      confirmedFlags.title
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -877,21 +879,21 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  aria-label="Confirm document type"
-                  title={confirmedFlags.docType ? 'Confirmed' : 'Confirm value'}
-                  onClick={() => toggleConfirmField('docType')}
-                  className={`h-[42px] w-[42px] shrink-0 inline-flex items-center justify-center rounded-xl border transition-colors ${
-                    confirmedFlags.docType
-                      ? 'border-emerald-600 bg-emerald-600 text-white'
-                      : extractedFlags.docType
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
-                        : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                  }`}
-                >
-                  <Check className="h-4 w-4" />
-                </button>
+                {extractedFlags.docType && (
+                  <button
+                    type="button"
+                    aria-label="Confirm document type"
+                    title={confirmedFlags.docType ? 'Confirmed' : 'Confirm value'}
+                    onClick={() => toggleConfirmField('docType')}
+                    className={`h-[42px] w-[42px] shrink-0 inline-flex items-center justify-center rounded-xl border transition-colors ${
+                      confirmedFlags.docType
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -933,21 +935,21 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
                   }}
                   className="flex-1 min-h-[42px] font-numeric rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
                 />
-                <button
-                  type="button"
-                  aria-label="Confirm issue date"
-                  title={confirmedFlags.issueDate ? 'Confirmed' : 'Confirm value'}
-                  onClick={() => toggleConfirmField('issueDate')}
-                  className={`h-[42px] w-[42px] shrink-0 inline-flex items-center justify-center rounded-xl border transition-colors ${
-                    confirmedFlags.issueDate
-                      ? 'border-emerald-600 bg-emerald-600 text-white'
-                      : extractedFlags.issueDate
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
-                        : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]'
-                  }`}
-                >
-                  <Check className="h-4 w-4" />
-                </button>
+                {extractedFlags.issueDate && (
+                  <button
+                    type="button"
+                    aria-label="Confirm issue date"
+                    title={confirmedFlags.issueDate ? 'Confirmed' : 'Confirm value'}
+                    onClick={() => toggleConfirmField('issueDate')}
+                    className={`h-[42px] w-[42px] shrink-0 inline-flex items-center justify-center rounded-xl border transition-colors ${
+                      confirmedFlags.issueDate
+                        ? 'border-emerald-600 bg-emerald-600 text-white'
+                        : 'border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20'
+                    }`}
+                  >
+                    <Check className="h-4 w-4" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1137,5 +1139,6 @@ export const DocumentScannerModal: React.FC<DocumentScannerModalProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

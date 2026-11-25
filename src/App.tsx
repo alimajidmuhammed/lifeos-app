@@ -4,6 +4,8 @@ import { AppShell } from './components/AppShell';
 import { AICommandPalette } from './components/AICommandPalette';
 import { AppLockOverlay } from './components/AppLockOverlay';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { SplashScreen } from './components/SplashScreen';
+import { decodeLinkProfile, PublicLinkProfileView } from './features/qr/ui/PublicLinkProfileView';
 import { HomeView } from './features/home/ui/HomeView';
 import { useLifeOSSync } from './hooks/useLifeOS';
 import { useUIStore } from './state/useUIStore';
@@ -25,6 +27,7 @@ const NotesView = lazy(() => import('./features/notes/ui/NotesView').then((m) =>
 const VaultView = lazy(() => import('./features/vault/ui/VaultView').then((m) => ({ default: m.VaultView })));
 const HabitsView = lazy(() => import('./features/habits/ui/HabitsView').then((m) => ({ default: m.HabitsView })));
 const FinanceView = lazy(() => import('./features/finance/ui/FinanceView').then((m) => ({ default: m.FinanceView })));
+const QRCodeView = lazy(() => import('./features/qr/ui/QRCodeView').then((m) => ({ default: m.QRCodeView })));
 const SettingsView = lazy(() => import('./features/settings/ui/SettingsView').then((m) => ({ default: m.SettingsView })));
 const ModuleReadinessView = lazy(() => import('./features/modules/ui/ModuleReadinessView').then((m) => ({ default: m.ModuleReadinessView })));
 
@@ -78,6 +81,7 @@ function LifeOSWorkspace() {
 
   return (
     <>
+      <SplashScreen />
       <AppShell>
         <Suspense fallback={<RouteFallback />}>
           {activeRoute === 'home' ? (
@@ -96,6 +100,8 @@ function LifeOSWorkspace() {
             <HabitsView />
           ) : activeRoute === 'finance' ? (
             <FinanceView />
+          ) : activeRoute === 'qr' ? (
+            <QRCodeView />
           ) : activeRoute === 'settings' ? (
             <SettingsView />
           ) : (
@@ -111,6 +117,32 @@ function LifeOSWorkspace() {
 }
 
 export default function App() {
+  const [publicToken, setPublicToken] = React.useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return new URLSearchParams(window.location.search).get('profile');
+  });
+
+  const publicProfile = React.useMemo(
+    () => (publicToken ? decodeLinkProfile(publicToken) : null),
+    [publicToken]
+  );
+
+  if (publicProfile) {
+    return (
+      <ErrorBoundary>
+        <PublicLinkProfileView
+          profile={publicProfile}
+          onOpenApp={() => {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('profile');
+            window.history.replaceState({}, '', url.toString());
+            setPublicToken(null);
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <LifeOSWorkspace />

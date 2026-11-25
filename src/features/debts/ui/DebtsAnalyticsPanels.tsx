@@ -44,10 +44,15 @@ export const PeopleLedgerPanel: React.FC<PeoplePanelProps> = ({
   return (
     <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] divide-y divide-[var(--border-hairline)] overflow-hidden">
       {people.map((person) => {
-        const activeCurrencies = SUPPORTED_CURRENCIES.filter(
+        const activeCurrencies = Array.from(
+          new Set([
+            ...Object.keys(person.owedToMeByCurrencyMinor),
+            ...Object.keys(person.iOweByCurrencyMinor),
+          ])
+        ).filter(
           (c) =>
-            person.owedToMeByCurrencyMinor[c] !== 0 ||
-            person.iOweByCurrencyMinor[c] !== 0
+            (person.owedToMeByCurrencyMinor[c] ?? 0) !== 0 ||
+            (person.iOweByCurrencyMinor[c] ?? 0) !== 0
         );
         const totalHistory = person.onTimeCount + person.lateCount;
         const onTimePct =

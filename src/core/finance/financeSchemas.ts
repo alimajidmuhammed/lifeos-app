@@ -72,7 +72,7 @@ export const FINANCE_ACCOUNT_LABELS: Record<FinanceAccount, string> = {
 };
 
 const dateYmdRegex = /^\d{4}-\d{2}-\d{2}$/;
-const CurrencyEnum = z.enum(['IQD', 'USD', 'EUR']);
+const CurrencyEnum = z.string().regex(/^[A-Z]{3}$/);
 
 export const TransactionItemSchema = z.object({
   id: z.string().min(1).max(128),

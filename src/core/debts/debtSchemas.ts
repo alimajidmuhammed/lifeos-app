@@ -30,7 +30,7 @@ export const PaymentMethodSchema = z.enum([
 ]);
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
 
-export const CurrencyCodeSchema = z.enum(['IQD', 'USD', 'EUR']);
+export const CurrencyCodeSchema = z.string().regex(/^[A-Z]{3}$/);
 
 export const DebtRecordSchema = z
   .object({
@@ -163,21 +163,21 @@ export function generateSafeEntityId(prefix: string): string {
 /**
  * Computes FX conversion rate between supported currencies using editable IQD base reference rates.
  */
-export interface FxRatesToIqd {
-  IQD: 1;
-  USD: number;
-  EUR: number;
-}
+import {
+  DEFAULT_FX_RATES_TO_IQD as CURRENCY_DEFAULT_FX_RATES,
+  getCurrencyMeta,
+  type FxRatesToIqd,
+} from '../currency/currency';
+
+export type { FxRatesToIqd };
 
 export const DEFAULT_FX_RATES_TO_IQD: FxRatesToIqd = {
-  IQD: 1,
-  USD: 1500,
-  EUR: 1620,
+  ...CURRENCY_DEFAULT_FX_RATES,
 };
 
 export function getCrossRate(from: CurrencyCode, to: CurrencyCode, rates: FxRatesToIqd): number {
   if (from === to) return 1;
-  const fromInIqd = rates[from];
-  const toInIqd = rates[to];
+  const fromInIqd = rates[from] ?? getCurrencyMeta(from).defaultRateToIqd;
+  const toInIqd = rates[to] ?? getCurrencyMeta(to).defaultRateToIqd;
   return fromInIqd / toInIqd;
 }

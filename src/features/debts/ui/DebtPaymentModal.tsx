@@ -5,6 +5,7 @@ import { formatMoney, fromMinorUnits, toMinorUnits } from '../../../core/currenc
 import { getTodayYmd } from '../../../core/debts/debtEngine';
 import type { DebtRecord, PaymentMethod, RecordPaymentInput } from '../../../core/debts/debtSchemas';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface DebtPaymentModalProps {
   debt: DebtRecord | null;
@@ -83,13 +84,14 @@ export const DebtPaymentModal: React.FC<DebtPaymentModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('debts.logPayment')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('debts.logPayment')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
+        onClick={onClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-md rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -226,5 +228,6 @@ export const DebtPaymentModal: React.FC<DebtPaymentModalProps> = ({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 };

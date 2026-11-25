@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Sparkles, X, ShieldAlert } from 'lucide-react';
+import { Bot, Sparkles, X, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { fromMinorUnits, toMinorUnits, type CurrencyCode } from '../../../core/currency/currency';
 import { getTodayYmd } from '../../../core/debts/debtEngine';
@@ -13,6 +13,7 @@ import { parseNaturalLanguageDebt } from '../../../core/ai/debtsAiClient';
 import { evaluateDailyAiQuota, getTodayDayKey } from '../../../core/entitlements/entitlements';
 import { aiUsageRepository } from '../../../data/repositories/firebaseWebAdapter';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface DebtFormModalProps {
   open: boolean;
@@ -40,6 +41,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const profile = useUIStore((s) => s.profile);
+  const activeCurrencies = useUIStore((s) => s.activeCurrencies);
   const authUser = useUIStore((s) => s.authUser);
   const entitlements = useUIStore((s) => s.entitlements);
   const todayAiUsage = useUIStore((s) => s.todayAiUsage);
@@ -55,6 +57,7 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
   const [notes, setNotes] = useState('');
 
   const [aiText, setAiText] = useState('');
+  const [aiOpen, setAiOpen] = useState(initialFocusAi);
   const [aiParsing, setAiParsing] = useState(false);
   const [aiNotice, setAiNotice] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -200,13 +203,14 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={isEditing ? t('debts.editDebt') : t('debts.addDebt')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={isEditing ? t('debts.editDebt') : t('debts.addDebt')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
+        onClick={onClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-lg sm:max-h-[90dvh] overflow-hidden rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -215,20 +219,38 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
           <h2 className="text-base font-semibold text-[var(--text-primary)]">
             {isEditing ? t('debts.editDebt') : t('debts.addDebt')}
           </h2>
-          <button
-            type="button"
-            aria-label={t('common.close')}
-            onClick={onClose}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {!isEditing && (
+              <button
+                type="button"
+                aria-label={t('debts.aiQuickEntry')}
+                aria-pressed={aiOpen}
+                title={t('debts.aiQuickEntry')}
+                onClick={() => setAiOpen((v) => !v)}
+                className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors btn-spring ${
+                  aiOpen
+                    ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+                }`}
+              >
+                <Bot className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label={t('common.close')}
+              onClick={onClose}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
-          {/* AI Natural Language Quick Parser (Create mode only, always confirmation-gated) */}
-          {!isEditing && (
-            <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-3.5 space-y-2.5">
+          {/* AI Natural Language Quick Parser (toggled by Robot icon) */}
+          {!isEditing && aiOpen && (
+            <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3.5 space-y-2.5 anim-slide-up">
               <div className="flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--text-primary)]">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
@@ -356,9 +378,11 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
                   onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
                   className="w-full min-h-[42px] font-numeric rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)] disabled:opacity-60 focus:outline-none focus:border-[var(--accent)]"
                 >
-                  <option value="IQD">IQD</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
+                  {activeCurrencies.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -435,5 +459,6 @@ export const DebtFormModal: React.FC<DebtFormModalProps> = ({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

@@ -129,7 +129,7 @@ export const RollingQueuePanel: React.FC<{
       {/* Scheduled Slot Table */}
       {queue.slots.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-8 text-center text-sm text-[var(--text-secondary)]">
-          No upcoming notifications in the next {queue.horizonDays} days. Add a reminder or debt due date to populate the rolling 64-slot queue.
+          No upcoming notifications in the next {queue.horizonDays} days. Add a reminder or debt due date to see them here.
         </div>
       ) : (
         <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] divide-y divide-[var(--border-hairline)] overflow-hidden">
@@ -265,7 +265,7 @@ export const WorkloadBalancePanel: React.FC<{
   return (
     <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] divide-y divide-[var(--border-hairline)] overflow-hidden">
       <div className="px-5 py-3.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[var(--text-muted)]">
-        <span>Deterministic 7-day alert load (flags ≥ 5 alerts/day or ≥ 3 alerts in one clock hour)</span>
+        <span>7-day alert balance (flags ≥ 5 alerts/day or ≥ 3 alerts in one hour)</span>
         <span className="font-numeric">Next 7 days</span>
       </div>
 

@@ -14,6 +14,7 @@ import {
   Lock,
   LogIn,
   LogOut,
+  QrCode,
   Settings,
   Sparkles,
   Wallet,
@@ -28,6 +29,7 @@ import { hapticLight, hapticMedium } from '../core/native/mobileBridge';
 import { useAllInboxNotifications } from './NotificationCenterModal';
 import { useNotificationInboxStore } from '../state/useNotificationInboxStore';
 import { PWAInstallButton } from './PWAInstallButton';
+import { ModalPortal } from './ModalPortal';
 
 interface NavItem {
   id: NavRoute;
@@ -45,6 +47,7 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'vault', labelKey: 'nav.vault', icon: FolderLock },
   { id: 'habits', labelKey: 'nav.habits', icon: Flame },
   { id: 'finance', labelKey: 'nav.finance', icon: Wallet },
+  { id: 'qr', labelKey: 'nav.qr', icon: QrCode },
   { id: 'settings', labelKey: 'nav.settings', icon: Settings },
 ];
 
@@ -90,6 +93,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const setNotifOpen = useNotificationInboxStore((s) => s.setOpen);
 
   // ── Swipe-to-Dismiss for Mobile Bottom Drawer ──
+  const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
   const [drawerDragY, setDrawerDragY] = useState(0);
   const drawerTouchStartY = useRef<number | null>(null);
 
@@ -226,10 +230,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         return;
       }
 
-      // '?' opens command palette
+      // '?' opens keyboard shortcuts help
       if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        setCommandPaletteOpen(true);
+        setShortcutsHelpOpen((prev) => !prev);
         return;
       }
 
@@ -511,7 +515,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         )}
 
         {/* Main Scrollable Viewport (max-w-1200px desktop, safe bottom padding on mobile) */}
-        <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-5 lg:py-8 pb-[calc(76px+env(safe-area-inset-bottom,0px))] lg:pb-10 anim-spring-in" key={activeRoute}>
+        <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 py-5 lg:py-8 pb-[calc(76px+env(safe-area-inset-bottom,0px))] lg:pb-10 anim-modal-backdrop" key={activeRoute}>
           {children}
         </main>
       </div>
@@ -603,11 +607,12 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
       {/* Mobile Drawer (Clean, elegant, full module navigation) */}
       {mobileMoreOpen && (
+        <ModalPortal onClose={() => setMobileMoreOpen(false)}>
         <div
           role="dialog"
           aria-modal="true"
           aria-label="Navigation menu"
-          className="lg:hidden fixed inset-0 z-50 flex items-end bg-slate-950/60 backdrop-blur-xs anim-modal-backdrop"
+          className="lg:hidden fixed inset-0 z-[60] flex items-end bg-slate-950/60 backdrop-blur-xs anim-modal-backdrop"
           onClick={() => setMobileMoreOpen(false)}
         >
           <div
@@ -733,6 +738,51 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             </div>
           </div>
         </div>
+        </ModalPortal>
+      )}
+
+      {/* Keyboard Shortcuts Help Modal ('?') */}
+      {shortcutsHelpOpen && (
+        <ModalPortal onClose={() => setShortcutsHelpOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('home.shortcutsTitle')}
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs anim-modal-backdrop"
+            onClick={() => setShortcutsHelpOpen(false)}
+          >
+            <div
+              className="w-full max-w-md rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4 anim-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-base font-semibold text-[var(--text-primary)]">
+                  {t('home.shortcutsTitle')}
+                </h2>
+                <button
+                  type="button"
+                  aria-label={t('common.close')}
+                  onClick={() => setShortcutsHelpOpen(false)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+                {t('home.shortcutsDesc')}
+              </p>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShortcutsHelpOpen(false)}
+                  className="min-h-[38px] rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)]"
+                >
+                  {t('common.close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
       )}
 
       {/* Undo / Feedback Toast */}

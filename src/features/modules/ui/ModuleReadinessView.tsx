@@ -73,6 +73,14 @@ const MODULE_INFO: Record<Exclude<NavRoute, 'home' | 'settings'>, ModuleDetailIn
     aiCapabilities: 'Spending pattern summaries and subscription waste detection.',
     privacyRule: 'Deterministic math runs on-device; AI receives aggregated category totals only.',
   },
+  qr: {
+    phase: 7,
+    firestorePath: 'localStorage (lifeos_qr_link_profile_v1)',
+    deterministicCore:
+      'On-device QR code generator and Linktree-style scannable link profile.',
+    aiCapabilities: 'Optional link organization.',
+    privacyRule: 'Generated locally on-device with no external tracking.',
+  },
 };
 
 export const ModuleReadinessView: React.FC<{ route: Exclude<NavRoute, 'home' | 'settings'> }> = ({

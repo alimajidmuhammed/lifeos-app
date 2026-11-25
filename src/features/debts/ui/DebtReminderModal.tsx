@@ -8,6 +8,7 @@ import { draftDebtReminderMessage } from '../../../core/ai/debtsAiClient';
 import { evaluateDailyAiQuota, getTodayDayKey } from '../../../core/entitlements/entitlements';
 import { aiUsageRepository } from '../../../data/repositories/firebaseWebAdapter';
 import { useUIStore } from '../../../state/useUIStore';
+import { ModalPortal } from '../../../components/ModalPortal';
 
 interface DebtReminderModalProps {
   debt: DebtRecord | null;
@@ -121,13 +122,14 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
     : `https://wa.me/?text=${encodeURIComponent(message)}`;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('debts.reminderTitle')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
-      onClick={onClose}
-    >
+    <ModalPortal onClose={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('debts.reminderTitle')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-y-auto anim-modal-backdrop"
+        onClick={onClose}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-lg rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -262,5 +264,6 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

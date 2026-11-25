@@ -22,6 +22,7 @@ import {
   X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { ModalPortal } from '../../../components/ModalPortal';
 import {
   requestNoteAssist,
   type NoteAiMode,
@@ -669,7 +670,7 @@ export const NotesView: React.FC = () => {
             <>
               {/* Editor Top Bar */}
               <div className="px-4 py-3 border-b border-[var(--border-hairline)] flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
                   <select
                     aria-label="Note folder"
                     value={selectedNote.folderId ?? ''}
@@ -1025,13 +1026,14 @@ export const NotesView: React.FC = () => {
 
       {/* Version History Drawer */}
       {versionsOpen && selectedNote && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Note version history"
-          className="fixed inset-0 z-50 flex justify-end bg-slate-950/50 backdrop-blur-xs"
-          onClick={() => setVersionsOpen(false)}
-        >
+        <ModalPortal onClose={() => setVersionsOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Note version history"
+            className="fixed inset-0 z-[60] flex justify-end bg-slate-950/50 backdrop-blur-xs"
+            onClick={() => setVersionsOpen(false)}
+          >
           <div
             className="w-full max-w-md h-full bg-[var(--bg-surface)] border-s border-[var(--border-hairline)] flex flex-col"
             onClick={(e) => e.stopPropagation()}
@@ -1092,6 +1094,7 @@ export const NotesView: React.FC = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* E2E Encryption Setup & Session Unlock Modal */}

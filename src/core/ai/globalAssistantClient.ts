@@ -13,7 +13,7 @@ import { evaluatePrivacyGate } from './privacyGate';
 export const ParsedTransactionDraftSchema = z.object({
   type: z.enum(['income', 'expense']),
   amountMajor: z.number().positive(),
-  currency: z.enum(['IQD', 'USD', 'EUR']),
+  currency: z.string().regex(/^[A-Z]{3}$/),
   category: z.enum(ALL_TRANSACTION_CATEGORIES).default('other'),
   occurredOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   account: z.enum(FINANCE_ACCOUNTS).default('cash'),

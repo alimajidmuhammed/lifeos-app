@@ -361,25 +361,25 @@ export const VaultView: React.FC = () => {
         </div>
       </section>
 
-      {/* 4-Column Flat KPI Strip */}
+      {/* Security & Expiry 3-Card Strip (Distinct Vault Identity) */}
       <section
         aria-label="Document Vault metrics"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden"
+        className="grid grid-cols-3 gap-2.5 sm:gap-3"
       >
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('vault.kpiTotal')}</div>
-          <div className="mt-1.5 font-numeric text-xl font-semibold text-[var(--text-primary)]">
+        <div className="rounded-2xl border border-slate-500/20 bg-gradient-to-br from-slate-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
+          <div className="text-[11px] sm:text-xs font-medium text-[var(--text-muted)]">{t('vault.kpiTotal')}</div>
+          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
             {summary.totalDocs}
           </div>
-          <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-            {folders.length} {folders.length === 1 ? 'folder' : 'folders'}
+          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
+            {folders.length} {folders.length === 1 ? 'folder' : 'folders'} · {formatBytes(summary.totalBytes)}
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('vault.kpiExpiring')}</div>
+        <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
+          <div className="text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-400">{t('vault.kpiExpiring')}</div>
           <div
-            className={`mt-1.5 font-numeric text-xl font-semibold ${
+            className={`mt-1.5 font-numeric text-2xl font-bold ${
               summary.expiredCount > 0
                 ? 'text-red-600 dark:text-red-400'
                 : summary.expiring30Count > 0
@@ -389,28 +389,18 @@ export const VaultView: React.FC = () => {
           >
             {summary.expiredCount + summary.expiring90Count}
           </div>
-          <div className="mt-0.5 font-numeric text-xs text-[var(--text-muted)]">
+          <div className="mt-0.5 font-numeric text-[11px] text-[var(--text-muted)] truncate">
             {summary.expiredCount} expired · {summary.expiring30Count} &le; 30d
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('vault.kpiEncrypted')}</div>
-          <div className="mt-1.5 font-numeric text-xl font-semibold text-[var(--accent)]">
+        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
+          <div className="text-[11px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t('vault.kpiEncrypted')}</div>
+          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--accent)]">
             {summary.encryptedCount}
           </div>
-          <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-            {vaultUnlocked ? 'E2E session unlocked' : 'AES-256-GCM opt-in'}
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('vault.kpiStorage')}</div>
-          <div className="mt-1.5 font-numeric text-xl font-semibold text-[var(--text-primary)] whitespace-nowrap">
-            {formatBytes(summary.totalBytes)}
-          </div>
-          <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-            Local-Only (Spark · $0)
+          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
+            {vaultUnlocked ? 'Vault unlocked' : 'Passphrase protected'}
           </div>
         </div>
       </section>

@@ -255,14 +255,14 @@ export function buildPersonLedgerRollups(
       existing.activeCount += 1;
       if (eff === 'overdue') existing.overdueCount += 1;
       if (debt.direction === 'owed_to_me') {
-        existing.owedToMeByCurrencyMinor[debt.currency] += debt.remainingMinor;
-        existing.netByCurrencyMinor[debt.currency] += debt.remainingMinor;
+        existing.owedToMeByCurrencyMinor[debt.currency] = (existing.owedToMeByCurrencyMinor[debt.currency] ?? 0) + debt.remainingMinor;
+        existing.netByCurrencyMinor[debt.currency] = (existing.netByCurrencyMinor[debt.currency] ?? 0) + debt.remainingMinor;
         const prob = estimateRepaymentProbability(debt, ledgersByKey[debt.personKey] ?? null, todayYmd);
         existing.scoreSum += prob.score;
         existing.scoreCount += 1;
       } else {
-        existing.iOweByCurrencyMinor[debt.currency] += debt.remainingMinor;
-        existing.netByCurrencyMinor[debt.currency] -= debt.remainingMinor;
+        existing.iOweByCurrencyMinor[debt.currency] = (existing.iOweByCurrencyMinor[debt.currency] ?? 0) + debt.remainingMinor;
+        existing.netByCurrencyMinor[debt.currency] = (existing.netByCurrencyMinor[debt.currency] ?? 0) - debt.remainingMinor;
       }
     }
 

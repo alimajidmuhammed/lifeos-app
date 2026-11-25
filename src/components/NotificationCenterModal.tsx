@@ -11,6 +11,7 @@ import {
   type InboxNotificationItem,
 } from '../state/useNotificationInboxStore';
 import { useUIStore } from '../state/useUIStore';
+import { ModalPortal } from './ModalPortal';
 
 function formatRelativeTime(iso: string): string {
   const ms = Date.parse(iso);
@@ -94,13 +95,14 @@ export const NotificationCenterModal: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Notifications"
-      className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
-      onClick={() => setOpen(false)}
-    >
+    <ModalPortal onClose={() => setOpen(false)}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Notifications"
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 sm:backdrop-blur-xs p-0 sm:p-4 overflow-hidden anim-modal-backdrop"
+        onClick={() => setOpen(false)}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-md rounded-none sm:rounded-2xl pt-safe sm:pt-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-hidden sm:max-h-[85dvh] flex flex-col anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
@@ -206,5 +208,6 @@ export const NotificationCenterModal: React.FC = () => {
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 };

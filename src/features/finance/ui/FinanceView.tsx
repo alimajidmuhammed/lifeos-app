@@ -3,6 +3,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Bell,
+  Bot,
   Download,
   PieChart,
   Plus,
@@ -17,10 +18,12 @@ import {
 import { useTranslation } from 'react-i18next';
 import { parseFinanceSentence } from '../../../core/ai/globalAssistantClient';
 import { exportTextFileNativeOrWeb } from '../../../core/native/mobileBridge';
+import { ModalPortal } from '../../../components/ModalPortal';
 import {
   convertMinorUnits,
   DEFAULT_FX_RATES_TO_IQD,
   formatMoney,
+  getCurrencyMeta,
   toMinorUnits,
   type CurrencyCode,
 } from '../../../core/currency/currency';
@@ -55,6 +58,7 @@ const ACCOUNT_LABELS = FINANCE_ACCOUNT_LABELS;
 export const FinanceView: React.FC = () => {
   const { t } = useTranslation();
   const profile = useUIStore((s) => s.profile);
+  const activeCurrencies = useUIStore((s) => s.activeCurrencies);
   const showToast = useUIStore((s) => s.showToast);
 
   const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7));
@@ -89,6 +93,7 @@ export const FinanceView: React.FC = () => {
 
   // Add Transaction Modal + AI Quick Entry
   const [txModalOpen, setTxModalOpen] = useState(false);
+  const [txAiOpen, setTxAiOpen] = useState(false);
   const [txType, setTxType] = useState<TransactionType>('expense');
   const [txAmount, setTxAmount] = useState('');
   const [txCurrency, setTxCurrency] = useState<CurrencyCode>(profile.primaryCurrency);
@@ -155,6 +160,7 @@ export const FinanceView: React.FC = () => {
   );
 
   const openTxModal = (focusAi = false) => {
+    setTxAiOpen(focusAi);
     setTxType('expense');
     setTxAmount('');
     setTxCurrency(profile.primaryCurrency);
@@ -342,18 +348,18 @@ export const FinanceView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <input
             type="month"
             aria-label="Filter finance month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 font-numeric text-xs text-[var(--text-primary)]"
+            className="min-h-[38px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 font-numeric text-xs text-[var(--text-primary)]"
           />
           <button
             type="button"
             onClick={() => openTxModal(true)}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
           >
             <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
             <span>{t('finance.aiQuickEntry')}</span>
@@ -361,7 +367,7 @@ export const FinanceView: React.FC = () => {
           <button
             type="button"
             onClick={() => setCsvModalOpen(true)}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
           >
             <Upload className="h-3.5 w-3.5" />
             <span>{t('finance.importCsv')}</span>
@@ -370,7 +376,7 @@ export const FinanceView: React.FC = () => {
             type="button"
             onClick={handleExportCsv}
             disabled={transactions.length === 0}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] disabled:opacity-50"
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] disabled:opacity-50 whitespace-nowrap"
           >
             <Download className="h-3.5 w-3.5" />
             <span>{t('finance.exportCsv')}</span>
@@ -378,7 +384,7 @@ export const FinanceView: React.FC = () => {
           <button
             type="button"
             onClick={() => openTxModal(false)}
-            className="inline-flex min-h-[40px] items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] transition-colors whitespace-nowrap"
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] transition-colors whitespace-nowrap"
           >
             <Plus className="h-4 w-4" />
             <span>{t('finance.addTransaction')}</span>
@@ -395,43 +401,52 @@ export const FinanceView: React.FC = () => {
         </div>
       )}
 
-      {/* 4-Column Flat KPI Strip */}
+      {/* Wallet Cards Strip (Distinct Finance Identity) */}
       <section
         aria-label="Monthly finance KPI strip"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
       >
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('finance.kpiIncome')} ({activeMonthKey})
+        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              {t('finance.kpiIncome')}
+            </span>
+            <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
           </div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--accent)]">
+          <div className="mt-2 font-numeric text-xl font-bold text-emerald-600 dark:text-emerald-400">
             +{formatMoney(monthlySummary.incomePrimaryMinor, profile.primaryCurrency, profile.locale)}
           </div>
           <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {monthlySummary.transactionCount} monthly entries
+            {t('finance.monthlyEntries', { count: monthlySummary.transactionCount })}
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('finance.kpiExpenses')} ({activeMonthKey})
+        <div className="rounded-2xl border border-rose-500/25 bg-gradient-to-br from-rose-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
+              {t('finance.kpiExpenses')}
+            </span>
+            <ArrowUpRight className="h-4 w-4 text-rose-500" />
           </div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
+          <div className="mt-2 font-numeric text-xl font-bold text-rose-600 dark:text-rose-400">
             -{formatMoney(monthlySummary.expensePrimaryMinor, profile.primaryCurrency, profile.locale)}
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">
+          <div className="mt-1 text-xs text-[var(--text-muted)] truncate">
             {monthlySummary.expenseBreakdown[0]
-              ? `Top: ${CATEGORY_LABELS[monthlySummary.expenseBreakdown[0].category]} (${monthlySummary.expenseBreakdown[0].sharePct}%)`
-              : 'No expenses logged'}
+              ? `${t(`finance.cat.${monthlySummary.expenseBreakdown[0].category}`, { defaultValue: CATEGORY_LABELS[monthlySummary.expenseBreakdown[0].category] })} (${monthlySummary.expenseBreakdown[0].sharePct}%)`
+              : t('finance.noExpensesLogged')}
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('finance.kpiNetCashflow')}
+        <div className="rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-violet-700 dark:text-violet-400">
+              {t('finance.kpiNetCashflow')}
+            </span>
+            <Wallet className="h-4 w-4 text-violet-500" />
           </div>
           <div
-            className={`mt-2 font-numeric text-xl font-semibold ${
+            className={`mt-2 font-numeric text-xl font-bold ${
               monthlySummary.netPrimaryMinor > 0
                 ? 'text-[var(--accent)]'
                 : monthlySummary.netPrimaryMinor < 0
@@ -442,17 +457,23 @@ export const FinanceView: React.FC = () => {
             {monthlySummary.netPrimaryMinor > 0 ? '+' : ''}
             {formatMoney(monthlySummary.netPrimaryMinor, profile.primaryCurrency, profile.locale)}
           </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            ≈ {formatMoney(secondaryNetMinor, profile.secondaryCurrency, profile.locale)} ·{' '}
-            {monthlySummary.savingsRatePct}% savings
+          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-1">
+            <span dir="ltr" className="inline-block">
+              ≈ {formatMoney(secondaryNetMinor, profile.secondaryCurrency, profile.locale)}
+            </span>
+            <span>·</span>
+            <span>{t('finance.savingsRate', { pct: monthlySummary.savingsRatePct })}</span>
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">
-            {t('finance.kpiSubscriptions')}
+        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-[var(--text-muted)]">
+              {t('finance.kpiSubscriptions')}
+            </span>
+            <Repeat className="h-4 w-4 text-[var(--text-muted)]" />
           </div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
+          <div className="mt-2 font-numeric text-xl font-bold text-[var(--text-primary)]">
             {formatMoney(
               subscriptionMetrics.monthlyBurnPrimaryMinor,
               profile.primaryCurrency,
@@ -460,8 +481,10 @@ export const FinanceView: React.FC = () => {
             )}
           </div>
           <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {subscriptionMetrics.activeCount} active ·{' '}
-            {subscriptionMetrics.upcomingWithin14Days.length} due ≤ 14d
+            {t('finance.subsActiveDue', {
+              active: subscriptionMetrics.activeCount,
+              due: subscriptionMetrics.upcomingWithin14Days.length,
+            })}
           </div>
         </div>
       </section>
@@ -530,7 +553,7 @@ export const FinanceView: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search merchant, category, account, or note..."
+                placeholder={t('finance.searchPlaceholder')}
                 className="w-full min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] ps-9 pe-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
               />
             </div>
@@ -554,7 +577,7 @@ export const FinanceView: React.FC = () => {
                 <option value="all">{t('ui.allCategories')}</option>
                 {ALL_TRANSACTION_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
-                    {CATEGORY_LABELS[c]}
+                    {t(`finance.cat.${c}`, { defaultValue: CATEGORY_LABELS[c] })}
                   </option>
                 ))}
               </select>
@@ -886,13 +909,14 @@ export const FinanceView: React.FC = () => {
 
       {/* Add Transaction Modal (with AI Quick Entry) */}
       {txModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('finance.addTransaction')}
-          className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
-          onClick={() => setTxModalOpen(false)}
-        >
+        <ModalPortal onClose={() => setTxModalOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('finance.addTransaction')}
+            className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+            onClick={() => setTxModalOpen(false)}
+          >
           <div
             className="w-full h-dvh sm:h-auto sm:max-w-lg rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -901,19 +925,36 @@ export const FinanceView: React.FC = () => {
               <h2 className="text-base font-semibold text-[var(--text-primary)]">
                 {t('finance.addTransaction')}
               </h2>
-              <button
-                type="button"
-                aria-label={t('common.close')}
-                onClick={() => setTxModalOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  aria-label={t('finance.aiQuickEntry')}
+                  aria-pressed={txAiOpen}
+                  title={t('finance.aiQuickEntry')}
+                  onClick={() => setTxAiOpen((v) => !v)}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-colors btn-spring ${
+                    txAiOpen
+                      ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                      : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+                  }`}
+                >
+                  <Bot className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={t('common.close')}
+                  onClick={() => setTxModalOpen(false)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <form onSubmit={handleSaveTransaction} className="p-6 space-y-4">
-              {/* Optional AI Natural-Language Quick Parse */}
-              <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-3 space-y-2">
+              {/* Optional AI Natural-Language Quick Parse (toggled by Robot icon) */}
+              {txAiOpen && (
+                <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3 space-y-2 anim-slide-up">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
                   <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
                   <span>{t('finance.aiQuickEntry')} (EN / AR / Kurdish)</span>
@@ -942,6 +983,7 @@ export const FinanceView: React.FC = () => {
                   </p>
                 )}
               </div>
+              )}
 
               {/* Type Switcher */}
               <div className="grid grid-cols-2 gap-2">
@@ -997,9 +1039,14 @@ export const FinanceView: React.FC = () => {
                     onChange={(e) => setTxCurrency(e.target.value as CurrencyCode)}
                     className="w-full min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]"
                   >
-                    <option value="IQD">IQD (Iraqi Dinar)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
+                    {activeCurrencies.map((c) => {
+                      const meta = getCurrencyMeta(c);
+                      return (
+                        <option key={c} value={c}>
+                          {c} ({meta.name})
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
@@ -1121,17 +1168,19 @@ export const FinanceView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Set Budget Modal */}
       {budgetModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('finance.addBudget')}
-          className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
-          onClick={() => setBudgetModalOpen(false)}
-        >
+        <ModalPortal onClose={() => setBudgetModalOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('finance.addBudget')}
+            className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+            onClick={() => setBudgetModalOpen(false)}
+          >
           <div
             className="w-full h-dvh sm:h-auto sm:max-w-md rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -1204,9 +1253,11 @@ export const FinanceView: React.FC = () => {
                     onChange={(e) => setBudgetCurrency(e.target.value as CurrencyCode)}
                     className="w-full min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]"
                   >
-                    <option value="IQD">IQD</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
+                    {activeCurrencies.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -1248,17 +1299,19 @@ export const FinanceView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Add Subscription Modal */}
       {subModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('finance.addSubscription')}
-          className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
-          onClick={() => setSubModalOpen(false)}
-        >
+        <ModalPortal onClose={() => setSubModalOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('finance.addSubscription')}
+            className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+            onClick={() => setSubModalOpen(false)}
+          >
           <div
             className="w-full h-dvh sm:h-auto sm:max-w-md rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -1329,9 +1382,11 @@ export const FinanceView: React.FC = () => {
                     onChange={(e) => setSubCurrency(e.target.value as CurrencyCode)}
                     className="w-full min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]"
                   >
-                    <option value="IQD">IQD</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
+                    {activeCurrencies.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -1412,17 +1467,19 @@ export const FinanceView: React.FC = () => {
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* CSV Import Modal */}
       {csvModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('finance.importCsv')}
-          className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
-          onClick={() => setCsvModalOpen(false)}
-        >
+        <ModalPortal onClose={() => setCsvModalOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t('finance.importCsv')}
+            className="fixed inset-0 z-[60] flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+            onClick={() => setCsvModalOpen(false)}
+          >
           <div
             className="w-full h-dvh sm:h-auto sm:max-w-lg rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
             onClick={(e) => e.stopPropagation()}
@@ -1495,6 +1552,7 @@ export const FinanceView: React.FC = () => {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

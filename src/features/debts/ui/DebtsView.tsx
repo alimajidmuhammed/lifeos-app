@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ArrowDownLeft,
+  ArrowUpRight,
   CheckCircle2,
   Download,
   MessageSquareText,
@@ -179,80 +181,89 @@ export const DebtsView: React.FC = () => {
         </div>
       </section>
 
-      {/* 4-Column Flat KPI Strip (Single Elevation, Hairline Dividers, Tabular Figures) */}
+      {/* 2-Card Split Ledger Summary (Distinct Debts Identity) */}
       <section
         aria-label="Debts financial summary"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
       >
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('debts.owedToMe')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--accent)]">
+        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+              {t('debts.owedToMe')}
+            </span>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+              <ArrowDownLeft className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-2 font-numeric text-2xl font-bold text-emerald-600 dark:text-emerald-400">
             {formatMoney(metrics.equivalentOwedToMePrimaryMinor, primaryCur, profile.locale)}
           </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
+          <div className="mt-1.5 font-numeric text-xs text-[var(--text-muted)]">
             {primaryCur}: {formatMoney(metrics.byCurrency[primaryCur].owedToMeMinor, primaryCur, profile.locale)} ·{' '}
             {secondaryCur}: {formatMoney(metrics.byCurrency[secondaryCur].owedToMeMinor, secondaryCur, profile.locale)}
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('debts.iOwe')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
+        <div className="rounded-2xl border border-rose-500/25 bg-gradient-to-br from-rose-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
+              {t('debts.iOwe')}
+            </span>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400">
+              <ArrowUpRight className="h-4 w-4" />
+            </span>
+          </div>
+          <div className="mt-2 font-numeric text-2xl font-bold text-rose-600 dark:text-rose-400">
             {formatMoney(metrics.equivalentIOwePrimaryMinor, primaryCur, profile.locale)}
           </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
+          <div className="mt-1.5 font-numeric text-xs text-[var(--text-muted)]">
             {primaryCur}: {formatMoney(metrics.byCurrency[primaryCur].iOweMinor, primaryCur, profile.locale)} ·{' '}
             {secondaryCur}: {formatMoney(metrics.byCurrency[secondaryCur].iOweMinor, secondaryCur, profile.locale)}
           </div>
         </div>
+      </section>
 
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-medium text-[var(--text-muted)]">{t('debts.netPosition')}</span>
-            <button
-              type="button"
-              onClick={() => setFxEditorOpen((v) => !v)}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--accent)] hover:underline"
-            >
-              <SlidersHorizontal className="h-3 w-3" />
-              <span>{t('debts.fxRatesBtn')}</span>
-            </button>
-          </div>
-          <div
-            className={`mt-2 font-numeric text-xl font-semibold ${
+      {/* Compact Net & Overdue Strip */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-5 py-3.5 text-xs">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="font-medium text-[var(--text-muted)]">{t('debts.netPosition')}:</span>
+          <span
+            className={`font-numeric text-sm font-bold ${
               metrics.equivalentNetPrimaryMinor > 0
                 ? 'text-[var(--accent)]'
                 : metrics.equivalentNetPrimaryMinor < 0
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-[var(--text-primary)]'
             }`}
           >
             {metrics.equivalentNetPrimaryMinor > 0 ? '+' : ''}
             {formatMoney(metrics.equivalentNetPrimaryMinor, primaryCur, profile.locale)}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {metrics.totalOpenCount} open · {metrics.totalSettledCount} settled
-          </div>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span className="font-numeric text-[var(--text-muted)]">
+            {t('debts.openSettledSummary', {
+              open: metrics.totalOpenCount,
+              settled: metrics.totalSettledCount,
+            })}
+          </span>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('debts.overdueAttention')}</div>
-          <div
-            className={`mt-2 font-numeric text-xl font-semibold ${
-              metrics.totalOverdueCount > 0
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-[var(--text-primary)]'
-            }`}
+        <div className="flex items-center gap-3">
+          {metrics.totalOverdueCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-0.5 font-numeric font-semibold text-red-600 dark:text-red-400">
+              {metrics.totalOverdueCount} {t('debts.statusOverdue')}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setFxEditorOpen((v) => !v)}
+            className="inline-flex items-center gap-1 font-medium text-[var(--accent)] hover:underline"
           >
-            {metrics.totalOverdueCount}
-          </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">
-            {metrics.totalOverdueCount > 0
-              ? 'Past due date — review or send reminder'
-              : 'All open obligations on schedule'}
-          </div>
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+            <span>{t('debts.fxRatesBtn')}</span>
+          </button>
         </div>
-      </section>
+      </div>
 
       {/* Editable FX Rates Bar (on demand) */}
       {fxEditorOpen && (

@@ -102,12 +102,23 @@ export const HomeView: React.FC = () => {
   }, [authUser?.displayName, profile.displayName]);
 
   const formattedToday = useMemo(() => {
+    const now = new Date();
+    if (profile.locale === 'ckb') {
+      const days = ['یەکشەممە', 'دووشەممە', 'سێشەممە', 'چوارشەممە', 'پێنجشەممە', 'هەینی', 'شەممە'];
+      const months = ['کانوونی دووەم', 'شوبات', 'ئازار', 'نیسان', 'ئایار', 'حوزەیران', 'تەمموز', 'ئاب', 'ئەیلوول', 'تشرینی یەکەم', 'تشرینی دووەم', 'کانوونی یەکەم'];
+      return `${days[now.getDay()]}، ${now.getDate()} ${months[now.getMonth()]}`;
+    }
+    if (profile.locale === 'kmr') {
+      const days = ['Yekşem', 'Duşem', 'Sêşem', 'Çarşem', 'Pêncşem', 'În', 'Şemî'];
+      const months = ['Çile', 'Sibat', 'Adar', 'Nîsan', 'Gulan', 'Hezîran', 'Tîrmeh', 'Tebax', 'Îlon', 'Cotmeh', 'Mijdar', 'Kanûn'];
+      return `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]}`;
+    }
     const localeTag = profile.locale === 'en' ? 'en-US' : profile.locale;
     return new Intl.DateTimeFormat(localeTag, {
       weekday: 'long',
       month: 'short',
       day: 'numeric',
-    }).format(new Date());
+    }).format(now);
   }, [profile.locale]);
 
   // Unified "Needs you today" list (real items only, no fabricated data)
@@ -421,7 +432,7 @@ export const HomeView: React.FC = () => {
       primaryValue: vaultSummary.totalDocs > 0 ? String(vaultSummary.totalDocs) : null,
       hint:
         vaultSummary.totalDocs > 0
-          ? `${vaultSummary.expiredCount + vaultSummary.expiring90Count} expiring`
+          ? t('home.vaultExpiringCount', { count: vaultSummary.expiredCount + vaultSummary.expiring90Count })
           : t('home.emptyHintVault'),
     },
   ];

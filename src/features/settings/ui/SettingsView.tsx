@@ -5,9 +5,10 @@ import {
   Fingerprint,
   Globe,
   KeyRound,
-  LayoutTemplate,
   Lock,
+  Minus,
   Moon,
+  Plus,
   ShieldCheck,
   Smartphone,
   Sun,
@@ -23,17 +24,23 @@ import {
   encryptText,
   verifyE2EPassphrase,
 } from '../../../core/crypto/e2eCrypto';
-import type { CurrencyCode, SupportedLocale } from '../../../core/currency/currency';
+import {
+  GLOBAL_CURRENCIES,
+  getCurrencyMeta,
+  type CurrencyCode,
+  type SupportedLocale,
+} from '../../../core/currency/currency';
 import { DEFAULT_FEATURE_FLAGS } from '../../../core/entitlements/entitlements';
 import type { AiModuleToggles } from '../../../core/schemas/userProfileSchema';
 import { persistProfilePatch } from '../../../hooks/useLifeOS';
 import { exportJsonNativeOrWeb } from '../../../core/native/mobileBridge';
+import { ModalPortal } from '../../../components/ModalPortal';
 import { SUPPORTED_LANGUAGES } from '../../../core/i18n/i18n';
 import { useUIStore, type ThemeMode } from '../../../state/useUIStore';
 import { PWAInstallButton } from '../../../components/PWAInstallButton';
 import {
   hasWebAuthnCredential,
-  isWebAuthnSupported,
+  isBiometricAvailableAsync,
   registerWebAuthn,
   removeWebAuthnCredential,
 } from '../../../core/auth/webauthn';
@@ -64,10 +71,12 @@ export const SettingsView: React.FC = () => {
   const lockApp = useUIStore((s) => s.lockApp);
   const showToast = useUIStore((s) => s.showToast);
 
-  const density = useUIStore((s) => s.density);
-  const setDensity = useUIStore((s) => s.setDensity);
   const fontScale = useUIStore((s) => s.fontScale);
   const setFontScale = useUIStore((s) => s.setFontScale);
+  const activeCurrencies = useUIStore((s) => s.activeCurrencies);
+  const addActiveCurrency = useUIStore((s) => s.addActiveCurrency);
+  const removeActiveCurrency = useUIStore((s) => s.removeActiveCurrency);
+  const [currencyToAdd, setCurrencyToAdd] = useState('');
 
   // Display name state
   const [displayNameInput, setDisplayNameInput] = useState(
@@ -85,8 +94,14 @@ export const SettingsView: React.FC = () => {
   const [webAuthnBusy, setWebAuthnBusy] = useState(false);
 
   useEffect(() => {
-    setWebAuthnSupported(isWebAuthnSupported());
+    let mounted = true;
     setWebAuthnEnrolled(hasWebAuthnCredential());
+    void isBiometricAvailableAsync().then((avail) => {
+      if (mounted) setWebAuthnSupported(avail);
+    });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleEnrollBiometrics = async () => {
@@ -279,48 +294,6 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        {/* Density Mode */}
-        <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
-              <LayoutTemplate className="h-4 w-4 text-[var(--accent)]" />
-              <span>{t('ui.displayDensity')}</span>
-            </h2>
-            <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-              {t('ui.displayDensityDesc')}
-            </p>
-          </div>
-          <div
-            role="group"
-            aria-label={t('ui.displayDensity')}
-            className="inline-flex items-center gap-1 rounded-xl bg-[var(--bg-subtle)] p-1"
-          >
-            {(
-              [
-                { id: 'comfortable', label: t('ui.comfortableDensity') },
-                { id: 'compact', label: t('ui.compactDensity') },
-              ] as const
-            ).map((opt) => {
-              const active = density === opt.id;
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setDensity(opt.id)}
-                  className={`min-h-[38px] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap ${
-                    active
-                      ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Editable Display Name */}
         <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -357,30 +330,39 @@ export const SettingsView: React.FC = () => {
           </form>
         </div>
 
-        {/* Custom Font Size Scale (85% to 125%) */}
+        {/* Custom Font Size Scale (85% to 125% with - / + buttons) */}
         <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
               <Type className="h-4 w-4 text-[var(--accent)]" />
-              <span>{t('ui.fontScaleTitle')} ({fontScale}%)</span>
+              <span>{t('ui.fontScaleTitle')}</span>
             </h2>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
               {t('ui.fontScaleDesc')}
             </p>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-64">
-            <span className="text-xs font-numeric text-[var(--text-muted)] shrink-0">85%</span>
-            <input
-              type="range"
-              min="85"
-              max="125"
-              step="5"
-              value={fontScale}
-              onChange={(e) => setFontScale(Number(e.target.value))}
-              aria-label="Font scale slider"
-              className="w-full accent-emerald-600 cursor-pointer h-2 bg-[var(--bg-subtle)] rounded-lg"
-            />
-            <span className="text-xs font-numeric text-[var(--text-muted)] shrink-0">125%</span>
+          <div className="inline-flex items-center gap-2 self-start sm:self-auto rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-1">
+            <button
+              type="button"
+              aria-label="Decrease font size"
+              disabled={fontScale <= 85}
+              onClick={() => setFontScale(Math.max(85, fontScale - 5))}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 btn-spring transition-colors"
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <span className="min-w-[54px] text-center font-numeric text-xs font-semibold text-[var(--text-primary)]">
+              {fontScale}%
+            </span>
+            <button
+              type="button"
+              aria-label="Increase font size"
+              disabled={fontScale >= 125}
+              onClick={() => setFontScale(Math.min(125, fontScale + 5))}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] disabled:opacity-40 btn-spring transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
@@ -425,47 +407,116 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label
-              htmlFor="primary-currency-select"
-              className="block text-xs font-medium text-[var(--text-secondary)]"
-            >
-              {t('home.primaryCurrency')}
-            </label>
-            <select
-              id="primary-currency-select"
-              value={profile.primaryCurrency}
-              onChange={(e) =>
-                handleCurrencyChange(e.target.value as CurrencyCode, profile.secondaryCurrency)
-              }
-              className="mt-1.5 min-h-[42px] w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]"
-            >
-              <option value="IQD">IQD — Iraqi Dinar</option>
-              <option value="USD">USD — US Dollar</option>
-              <option value="EUR">EUR — Euro</option>
-            </select>
+        <div className="p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label
+                htmlFor="primary-currency-select"
+                className="block text-xs font-medium text-[var(--text-secondary)]"
+              >
+                {t('home.primaryCurrency')}
+              </label>
+              <select
+                id="primary-currency-select"
+                value={profile.primaryCurrency}
+                onChange={(e) =>
+                  handleCurrencyChange(e.target.value as CurrencyCode, profile.secondaryCurrency)
+                }
+                className="mt-1.5 min-h-[42px] w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]"
+              >
+                {GLOBAL_CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="secondary-currency-select"
+                className="block text-xs font-medium text-[var(--text-secondary)]"
+              >
+                {t('home.secondaryCurrency')}
+              </label>
+              <select
+                id="secondary-currency-select"
+                value={profile.secondaryCurrency}
+                onChange={(e) =>
+                  handleCurrencyChange(profile.primaryCurrency, e.target.value as CurrencyCode)
+                }
+                className="mt-1.5 min-h-[42px] w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]"
+              >
+                {GLOBAL_CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label
-              htmlFor="secondary-currency-select"
-              className="block text-xs font-medium text-[var(--text-secondary)]"
-            >
-              {t('home.secondaryCurrency')}
-            </label>
-            <select
-              id="secondary-currency-select"
-              value={profile.secondaryCurrency}
-              onChange={(e) =>
-                handleCurrencyChange(profile.primaryCurrency, e.target.value as CurrencyCode)
-              }
-              className="mt-1.5 min-h-[42px] w-full rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-2 text-sm text-[var(--text-primary)]"
-            >
-              <option value="USD">USD — US Dollar</option>
-              <option value="IQD">IQD — Iraqi Dinar</option>
-              <option value="EUR">EUR — Euro</option>
-            </select>
+          {/* Active Currencies in Forms & Cards */}
+          <div className="pt-2 border-t border-[var(--border-hairline)] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div>
+                <h3 className="text-xs font-semibold text-[var(--text-primary)]">
+                  Active Currencies ({activeCurrencies.length})
+                </h3>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Currencies added here appear in Debts and Finance selectors.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  aria-label="Add global currency"
+                  value={currencyToAdd}
+                  onChange={(e) => {
+                    const code = e.target.value;
+                    if (code) {
+                      addActiveCurrency(code);
+                      setCurrencyToAdd('');
+                      showToast(`Added ${code} to active currencies.`);
+                    }
+                  }}
+                  className="min-h-[38px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)]"
+                >
+                  <option value="">+ Add currency...</option>
+                  {GLOBAL_CURRENCIES.filter((c) => !activeCurrencies.includes(c.code)).map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} — {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {activeCurrencies.map((code) => {
+                const meta = getCurrencyMeta(code);
+                const isPinned =
+                  code === profile.primaryCurrency || code === profile.secondaryCurrency;
+                return (
+                  <span
+                    key={code}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-1 text-xs font-medium text-[var(--text-primary)]"
+                  >
+                    <span className="font-numeric font-semibold text-[var(--accent)]">{code}</span>
+                    <span className="text-[var(--text-muted)]">{meta.symbol}</span>
+                    {!isPinned && (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${code}`}
+                        onClick={() => removeActiveCurrency(code)}
+                        className="ms-0.5 text-[var(--text-muted)] hover:text-red-500"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </span>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -723,53 +774,7 @@ export const SettingsView: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Portability, PWA & Feature Flags */}
-      <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-4">
-        <h2 className="text-base font-semibold text-[var(--text-primary)]">
-          {t('settings.accountTitle')}
-        </h2>
-
-        <p className="text-xs text-[var(--text-secondary)]">
-          {t('settings.appleSignInFlag')}
-        </p>
-
-        <label className="inline-flex items-center gap-2.5 text-xs text-[var(--text-primary)] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={profile.analyticsConsent}
-            onChange={(e) => {
-              void persistProfilePatch({ analyticsConsent: e.target.checked });
-              showToast('Analytics consent preference updated.');
-            }}
-            className="h-4 w-4 accent-emerald-600"
-          />
-          <span>{t('settings.analyticsConsentLabel')}</span>
-        </label>
-
-        <div className="pt-2 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleExportJson}
-            className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-4 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors"
-          >
-            <Download className="h-4 w-4 text-[var(--accent)]" />
-            <span>{t('settings.exportJsonBtn')}</span>
-          </button>
-          <PWAInstallButton compact />
-        </div>
-      </section>
-
-      {/* 5. Keyboard Shortcuts Reference */}
-      <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-2">
-        <h2 className="text-base font-semibold text-[var(--text-primary)]">
-          {t('home.shortcutsTitle')}
-        </h2>
-        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-          {t('home.shortcutsDesc')}
-        </p>
-      </section>
-
-      {/* 6. About & Legal */}
+      {/* 4. About & Legal */}
       <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">
@@ -798,47 +803,120 @@ export const SettingsView: React.FC = () => {
       </section>
 
       {legalModal && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs anim-modal-backdrop"
-          onClick={() => setLegalModal(null)}
-        >
+        <ModalPortal onClose={() => setLegalModal(null)}>
           <div
-            className="w-full max-w-lg rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 shadow-2xl space-y-4 anim-modal-panel"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-xs anim-modal-backdrop"
+            onClick={() => setLegalModal(null)}
           >
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-base font-semibold text-[var(--text-primary)]">
-                {legalModal === 'privacy'
-                  ? t('settings.privacyPolicyBtn')
-                  : t('settings.termsBtn')}
-              </h3>
-              <button
-                type="button"
-                aria-label={t('common.close')}
-                onClick={() => setLegalModal(null)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-              {legalModal === 'privacy'
-                ? t('settings.privacyPolicyBody')
-                : t('settings.termsBody')}
-            </p>
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setLegalModal(null)}
-                className="min-h-[40px] rounded-xl bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)]"
-              >
-                {t('common.close')}
-              </button>
+            <div
+              className="w-full max-w-2xl max-h-[85dvh] flex flex-col rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-2xl overflow-hidden anim-modal-content"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="shrink-0 flex items-center justify-between gap-2 border-b border-[var(--border-hairline)] px-6 py-4">
+                <div>
+                  <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                    {legalModal === 'privacy'
+                      ? t('settings.privacyPolicyBtn')
+                      : t('settings.termsBtn')}
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    LifeinOne · Effective November 2026
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={t('common.close')}
+                  onClick={() => setLegalModal(null)}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 text-xs sm:text-sm leading-relaxed text-[var(--text-secondary)]">
+                {legalModal === 'privacy' ? (
+                  <>
+                    <p>{t('settings.privacyPolicyBody')}</p>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">1. Local-First Storage &amp; Cloud Sync</h4>
+                      <p>
+                        Your debts, tasks, reminders, habits, notes, and financial entries are stored locally on your device. If you choose to sign in with your account, your records are synchronized securely to your private cloud workspace so you can access them across devices.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">2. End-to-End Encryption &amp; Document Vault</h4>
+                      <p>
+                        Locked notes and protected Vault documents are encrypted on-device using AES-256-GCM before being stored. Your Vault passphrase and Recovery Key never leave your device and cannot be reset or read by LifeinOne servers.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">3. AI Assistant Privacy Gate</h4>
+                      <p>
+                        When you use AI features, only the specific prompt and non-sensitive context you submit are processed. Sensitive Vault files, passports, IDs, and E2E-locked notes are strictly blocked from leaving your device.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">4. Biometrics &amp; Device Permissions</h4>
+                      <p>
+                        Face ID, Touch ID, and Android Biometric authentication are handled exclusively by your device&apos;s operating system. LifeinOne never collects, stores, or transmits biometric templates. Camera and notification permissions are used only when you scan documents or schedule reminders.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">5. Your Control &amp; Data Deletion</h4>
+                      <p>
+                        You retain full ownership of your data. You can edit or delete any record at any time, disable AI features in Settings, or delete your account and associated cloud data permanently.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>{t('settings.termsBody')}</p>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">1. Acceptance of Terms</h4>
+                      <p>
+                        By using LifeinOne, you agree to these Terms of Use. LifeinOne is provided as a personal productivity, organization, and financial tracking tool for individual, non-commercial use.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">2. Personal Financial &amp; Debt Tracking Disclaimer</h4>
+                      <p>
+                        LifeinOne helps you record personal debts, budgets, expenses, and currency conversions. It does not provide financial, legal, tax, or accounting advice, nor does it execute real-money transfers. Always verify critical balances and exchange rates independently.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">3. Security &amp; Recovery Responsibility</h4>
+                      <p>
+                        You are responsible for safeguarding your device PIN and any optional E2E Vault passphrase or Recovery Key. Because encrypted data cannot be decrypted without your passphrase, lost credentials cannot be recovered by LifeinOne.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">4. AI-Generated Suggestions</h4>
+                      <p>
+                        AI-assisted parsing and daily briefings are provided as convenience drafts. LifeinOne requires your explicit confirmation before saving AI-proposed changes; you are responsible for reviewing accuracy before confirming.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <h4 className="font-semibold text-[var(--text-primary)]">5. Availability &amp; Updates</h4>
+                      <p>
+                        We continually improve LifeinOne and may update features or these terms over time. Continued use of the application after updates constitutes acceptance of the revised terms.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="shrink-0 flex justify-end border-t border-[var(--border-hairline)] px-6 py-3.5">
+                <button
+                  type="button"
+                  onClick={() => setLegalModal(null)}
+                  className="min-h-[40px] rounded-xl bg-[var(--accent)] px-5 py-2 text-xs font-medium text-white hover:bg-[var(--accent-hover)]"
+                >
+                  {t('common.close')}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
     </div>
   );

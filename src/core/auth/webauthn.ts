@@ -1,12 +1,28 @@
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
 /**
- * WebAuthn Biometric Authentication for LifeOS App Lock
- * Uses navigator.credentials.create/get for Touch ID / Face ID / Windows Hello
- * Credential ID is stored in localStorage; private key never leaves the device.
- * WebAuthn requires a Secure Context (HTTPS or localhost).
+ * Unified Biometric Authentication for LifeinOne App Lock
+ * - Native iOS/Android (Capacitor): uses Face ID / Touch ID / BiometricPrompt via NativeBiometricPlugin
+ * - Web / PWA: uses WebAuthn (navigator.credentials.create/get)
  */
+
+interface NativeBiometricPlugin {
+  isAvailable(): Promise<{ available: boolean }>;
+  authenticate(options?: { title?: string; reason?: string }): Promise<{ verified: boolean; error?: string }>;
+}
+
+const NativeBiometric = registerPlugin<NativeBiometricPlugin>('NativeBiometric');
 
 const WEBAUTHN_CREDENTIAL_KEY = 'lifeos_webauthn_credential_id_v1';
 const WEBAUTHN_USER_ID = 'lifeos-local-user';
+
+function isNativePlatform(): boolean {
+  try {
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
 
 export function isSecureContext(): boolean {
   if (typeof window === 'undefined') return false;
@@ -21,12 +37,25 @@ export function getRpId(): string {
 }
 
 export function isWebAuthnSupported(): boolean {
+  if (isNativePlatform()) return true;
   return (
     isSecureContext() &&
     typeof window !== 'undefined' &&
     typeof window.PublicKeyCredential !== 'undefined' &&
     typeof navigator.credentials !== 'undefined'
   );
+}
+
+export async function isBiometricAvailableAsync(): Promise<boolean> {
+  if (isNativePlatform()) {
+    try {
+      const res = await NativeBiometric.isAvailable();
+      return Boolean(res?.available);
+    } catch {
+      return false;
+    }
+  }
+  return isWebAuthnSupported();
 }
 
 export function hasWebAuthnCredential(): boolean {
@@ -71,6 +100,24 @@ function generateChallenge(): Uint8Array<ArrayBuffer> {
  * Returns true on success, false if cancelled or unsupported.
  */
 export async function registerWebAuthn(): Promise<boolean> {
+  if (isNativePlatform()) {
+    try {
+      const avail = await NativeBiometric.isAvailable();
+      if (!avail?.available) return false;
+      const res = await NativeBiometric.authenticate({
+        title: 'Enable Biometric Lock',
+        reason: 'Verify your identity to enable biometric unlock for LifeinOne',
+      });
+      if (res?.verified) {
+        localStorage.setItem(WEBAUTHN_CREDENTIAL_KEY, 'native_biometric_enrolled');
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   if (!isWebAuthnSupported()) return false;
 
   try {
@@ -80,11 +127,11 @@ export async function registerWebAuthn(): Promise<boolean> {
     const credential = await navigator.credentials.create({
       publicKey: {
         challenge: generateChallenge(),
-        rp: { name: 'LifeOS', id: rpId },
+        rp: { name: 'LifeinOne', id: rpId },
         user: {
           id: userIdBytes,
-          name: 'LifeOS User',
-          displayName: 'LifeOS Local User',
+          name: 'LifeinOne User',
+          displayName: 'LifeinOne Local User',
         },
         pubKeyCredParams: [
           { alg: -7, type: 'public-key' },   // ES256
@@ -116,6 +163,19 @@ export async function registerWebAuthn(): Promise<boolean> {
  * Returns true if biometric check passes, false otherwise.
  */
 export async function authenticateWebAuthn(): Promise<boolean> {
+  if (isNativePlatform()) {
+    if (!hasWebAuthnCredential()) return false;
+    try {
+      const res = await NativeBiometric.authenticate({
+        title: 'Unlock LifeinOne',
+        reason: 'Verify your identity to unlock LifeinOne',
+      });
+      return Boolean(res?.verified);
+    } catch {
+      return false;
+    }
+  }
+
   if (!isWebAuthnSupported()) return false;
 
   const credId = getStoredCredentialId();

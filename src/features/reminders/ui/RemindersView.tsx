@@ -266,25 +266,25 @@ export const RemindersView: React.FC = () => {
         </div>
       )}
 
-      {/* 4-Column Flat KPI Strip */}
+      {/* Warm Focus 3-Card Summary (Distinct Reminders Identity) */}
       <section
         aria-label="Reminders summary"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl border border-[var(--border-hairline)] bg-[var(--border-hairline)] overflow-hidden"
+        className="grid grid-cols-3 gap-2.5 sm:gap-3"
       >
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiDueToday')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--accent)]">
+        <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
+          <div className="text-[11px] sm:text-xs font-medium text-amber-700 dark:text-amber-400">{t('reminders.kpiDueToday')}</div>
+          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
             {summary.dueTodayCount}
           </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {summary.activeCount} active · {summary.completedCount} completed
+          <div className="mt-0.5 font-numeric text-[11px] text-[var(--text-muted)]">
+            {summary.activeCount} active
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiOverdue')}</div>
+        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4">
+          <div className="text-[11px] sm:text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiOverdue')}</div>
           <div
-            className={`mt-2 font-numeric text-xl font-semibold ${
+            className={`mt-1.5 font-numeric text-2xl font-bold ${
               summary.overdueCount > 0
                 ? 'text-red-600 dark:text-red-400'
                 : 'text-[var(--text-primary)]'
@@ -292,28 +292,18 @@ export const RemindersView: React.FC = () => {
           >
             {summary.overdueCount}
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">
-            {summary.overdueCount > 0 ? 'Needs action or snooze' : 'All alerts on schedule'}
+          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
+            {summary.overdueCount > 0 ? 'Needs action' : 'On schedule'}
           </div>
         </div>
 
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiRecurring')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
+        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4">
+          <div className="text-[11px] sm:text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiRecurring')}</div>
+          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
             {summary.recurringActiveCount}
           </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)]">
-            RFC-5545 RRULE auto-advancing
-          </div>
-        </div>
-
-        <div className="bg-[var(--bg-surface)] p-5">
-          <div className="text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiQueueSlots')}</div>
-          <div className="mt-2 font-numeric text-xl font-semibold text-[var(--text-primary)]">
-            {rollingQueue.slots.length} / {rollingQueue.cap}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {rollingQueue.quietHoursShiftedCount} quiet-shifted · {rollingQueue.overflowCount} overflow
+          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
+            Auto-repeating
           </div>
         </div>
       </section>

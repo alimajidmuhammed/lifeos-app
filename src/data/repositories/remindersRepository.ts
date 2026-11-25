@@ -66,7 +66,7 @@ export class FirebaseWebRemindersRepository implements RemindersRepository {
             dueAtIso: raw.dueAtIso,
             rrule: raw.rrule,
             snoozedUntilIso: raw.snoozedUntilIso,
-            respectQuietHours: raw.respectQuietHours ?? true,
+            respectQuietHours: raw.respectQuietHours ?? false,
             status: raw.status ?? (raw.isCompleted ? 'completed' : 'scheduled'),
             isCompleted: Boolean(raw.isCompleted),
             completedCount: Number(raw.completedCount ?? 0),

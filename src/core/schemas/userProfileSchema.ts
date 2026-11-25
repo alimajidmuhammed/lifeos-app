@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const LocaleSchema = z.enum(['en', 'ar', 'ckb', 'kmr', 'fa', 'tr', 'ru', 'id', 'es', 'de']);
 export const ThemeSchema = z.enum(['light', 'dark', 'amoled']);
-export const CurrencySchema = z.enum(['IQD', 'USD', 'EUR']);
+export const CurrencySchema = z.string().regex(/^[A-Z]{3}$/);
 export const VaultStorageModeSchema = z.enum(['local_only', 'cloud_private']);
 
 export const AiModuleTogglesSchema = z.object({

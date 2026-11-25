@@ -5,7 +5,6 @@ import {
   Search,
   Send,
   ShieldAlert,
-  ShieldCheck,
   Sparkles,
   Wrench,
   X,
@@ -41,6 +40,7 @@ import { usePlanner } from '../hooks/usePlanner';
 import { useReminders } from '../hooks/useReminders';
 import { useVault } from '../hooks/useVault';
 import { useUIStore, type NavRoute } from '../state/useUIStore';
+import { ModalPortal } from './ModalPortal';
 
 const MODULE_LABELS: Record<SearchModuleId, string> = {
   debts: 'Debts',
@@ -378,56 +378,44 @@ export const AICommandPalette: React.FC = () => {
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('assistant.title')}
-      className="fixed inset-0 z-50 flex items-stretch sm:items-start justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:pt-16 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
-      onClick={() => setOpen(false)}
-    >
+    <ModalPortal onClose={() => setOpen(false)}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('assistant.title')}
+        className="fixed inset-0 z-[60] flex items-stretch sm:items-start justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:pt-16 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+        onClick={() => setOpen(false)}
+      >
       <div
         className="w-full h-dvh sm:h-auto sm:max-w-2xl rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[85dvh] anim-top-sheet"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--border-hairline)] px-6 py-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-[var(--accent)]" />
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">
-                Global Search &amp; AI Command Palette
-              </h2>
+        {/* Clean Header */}
+        <div className="flex items-center justify-between gap-4 border-b border-[var(--border-hairline)] px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <Sparkles className="h-4 w-4" />
             </div>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Instant offline search across all 7 modules + Privacy-Gated Gemini tool-calling with confirmation preview.
-            </p>
+            <div>
+              <h2 className="text-base font-semibold text-[var(--text-primary)]">
+                {t('assistant.title')}
+              </h2>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                Search anything or ask AI to create records
+              </p>
+            </div>
           </div>
           <button
             type="button"
             aria-label={t('common.close')}
             onClick={() => setOpen(false)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Status Metadata Line (Unboxed, Zero-Pill Discipline) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-hairline)] bg-[var(--bg-subtle)]/50 px-6 py-2.5 text-xs text-[var(--text-muted)]">
-          <div className="flex flex-wrap items-center gap-2">
-            <ShieldCheck className="h-3.5 w-3.5 text-[var(--accent)] shrink-0" />
-            <span>{freeTier ? 'Privacy Gate: Free Tier Strict' : 'Paid Zero-Retention Tier'}</span>
-            <span aria-hidden="true">·</span>
-            <span className="font-numeric">
-              {t('ui.assistantHeader')}
-            </span>
-          </div>
-          <div className="font-numeric text-[var(--text-secondary)]">
-            Quota: {quota.usedToday}/{quota.dailyLimit}
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {!profile.aiGlobalEnabled && (
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:text-amber-200">
               {t('assistant.disabledNotice')}
@@ -443,10 +431,10 @@ export const AICommandPalette: React.FC = () => {
               </label>
               <textarea
                 id="ai-command-input"
-                rows={2}
+                rows={3}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder='Search across all 7 modules, or ask AI: "How much did I spend this month?" or "Add a daily habit to read 20 minutes"'
+                placeholder='Search modules or ask AI (e.g. "How much did I spend this month?")'
                 className="w-full resize-none rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] ps-10 pe-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent)] focus:outline-none"
               />
             </div>
@@ -509,28 +497,6 @@ export const AICommandPalette: React.FC = () => {
               ))}
             </div>
           )}
-
-          {/* Privacy Gate Test Checkboxes */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-xs text-[var(--text-secondary)]">
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={simulateVaultImage}
-                onChange={(e) => setSimulateVaultImage(e.target.checked)}
-                className="h-4 w-4 rounded border-[var(--border-hairline)] accent-emerald-600"
-              />
-              <span>{t('assistant.includeVaultToggle')}</span>
-            </label>
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={simulateLockedNote}
-                onChange={(e) => setSimulateLockedNote(e.target.checked)}
-                className="h-4 w-4 rounded border-[var(--border-hairline)] accent-emerald-600"
-              />
-              <span>{t('assistant.includeLockedToggle')}</span>
-            </label>
-          </div>
 
           <div className="flex items-center justify-end gap-3">
             <button
@@ -696,5 +662,6 @@ export const AICommandPalette: React.FC = () => {
         )}
       </div>
     </div>
+    </ModalPortal>
   );
 };

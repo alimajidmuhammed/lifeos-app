@@ -659,11 +659,11 @@ export const HabitsView: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-label={editingHabit ? t('habits.editHabit') : t('habits.addHabit')}
-          className="fixed inset-0 z-50 flex items-start sm:items-center justify-center bg-slate-950/60 p-0 sm:p-4 backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
+          className="fixed inset-0 z-50 flex items-stretch sm:items-center justify-center bg-[var(--bg-surface)] sm:bg-slate-950/60 p-0 sm:p-4 sm:backdrop-blur-xs overflow-y-auto anim-modal-backdrop"
           onClick={() => setModalOpen(false)}
         >
           <div
-            className="w-full sm:max-w-lg rounded-b-3xl sm:rounded-2xl pt-safe border-b sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] shadow-xl overflow-hidden max-h-[90dvh] overflow-y-auto anim-top-sheet"
+            className="w-full h-dvh sm:h-auto sm:max-w-lg rounded-none sm:rounded-2xl pt-safe pb-safe sm:pt-0 sm:pb-0 border-0 sm:border border-[var(--border-hairline)] bg-[var(--bg-surface)] sm:shadow-xl overflow-y-auto sm:max-h-[90dvh] anim-top-sheet"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-hairline)] px-6 py-4">

@@ -71,6 +71,17 @@
   --list-gap: var(--list-gap-compact);
 }
 
+html, body {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input, textarea, select, [contenteditable="true"], .select-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--bg-canvas);
@@ -183,6 +194,11 @@ h1, h2, h3, .font-display {
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes native-screen-in {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .anim-spring-in {
   animation: spring-fade-in var(--duration-enter) var(--spring-snappy) both;
 }
@@ -216,7 +232,7 @@ h1, h2, h3, .font-display {
 }
 
 .anim-top-sheet {
-  animation: top-sheet-in var(--duration-enter) var(--spring-snappy) both;
+  animation: native-screen-in var(--duration-normal) var(--spring-snappy) both;
 }
 
 @media (min-width: 640px) {

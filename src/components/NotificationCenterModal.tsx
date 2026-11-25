@@ -10,8 +10,6 @@ import {
   type InboxNotificationItem,
 } from '../state/useNotificationInboxStore';
 import { useUIStore } from '../state/useUIStore';
-import { LottieBadge } from './LottieBadge';
-import bellCalmAnim from '../assets/lottie/bell-calm.json';
 
 function formatRelativeTime(iso: string): string {
   const ms = Date.parse(iso);
@@ -144,18 +142,9 @@ export const NotificationCenterModal: React.FC = () => {
         {/* Notification List */}
         <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-hairline)] pb-safe">
           {items.length === 0 ? (
-            <div className="px-6 py-16 text-center space-y-2">
-              <div className="mx-auto flex items-center justify-center">
-                <LottieBadge
-                  animationData={bellCalmAnim}
-                  size={64}
-                  loop
-                  fallback={
-                    <div className="h-11 w-11 rounded-2xl bg-[var(--bg-subtle)] flex items-center justify-center text-[var(--text-muted)]">
-                      <Bell className="h-5 w-5" />
-                    </div>
-                  }
-                />
+            <div className="px-6 py-16 text-center space-y-2.5">
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center anim-habit-pulse">
+                <Bell className="h-6 w-6 anim-bell-swing" />
               </div>
               <p className="text-sm font-semibold text-[var(--text-primary)]">All caught up</p>
               <p className="text-xs text-[var(--text-muted)]">

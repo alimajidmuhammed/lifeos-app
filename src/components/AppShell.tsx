@@ -376,7 +376,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                 }`}
               >
                 <span className="flex items-center gap-3 truncate">
-                  <Icon className="h-5 w-5 shrink-0" />
+                  <Icon
+                    key={isActive ? `${item.id}_active` : item.id}
+                    className={`h-5 w-5 shrink-0 ${isActive ? 'anim-nav-active' : ''}`}
+                  />
                   {!sidebarCollapsed && <span className="truncate">{t(item.labelKey)}</span>}
                 </span>
               </button>
@@ -454,7 +457,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
               }}
               className="relative inline-flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] btn-spring"
             >
-              <Bell className="h-[18px] w-[18px]" />
+              <Bell className={`h-[18px] w-[18px] ${unreadCount > 0 ? 'anim-bell-swing' : ''}`} />
               {unreadCount > 0 && (
                 <span className="font-numeric absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -558,7 +561,10 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
                   isActive ? 'bg-[var(--accent-soft)]' : ''
                 }`}
               >
-                <Icon className="h-[19px] w-[19px]" />
+                <Icon
+                  key={isActive ? `${tabId}_m_active` : tabId}
+                  className={`h-[19px] w-[19px] ${isActive ? 'anim-nav-active' : ''}`}
+                />
               </span>
               <span className="truncate max-w-[64px]">{t(item.labelKey)}</span>
             </button>

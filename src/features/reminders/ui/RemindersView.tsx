@@ -30,8 +30,6 @@ import { useUIStore } from '../../../state/useUIStore';
 import { hapticLight, hapticSuccess } from '../../../core/native/mobileBridge';
 import { isNativePlatform } from '../../../core/reminders/nativeNotifications';
 import { ReminderFormModal } from './ReminderFormModal';
-import { LottieBadge } from '../../../components/LottieBadge';
-import bellCalmAnim from '../../../assets/lottie/bell-calm.json';
 import {
   ChannelsDirectoryPanel,
   RollingQueuePanel,
@@ -446,8 +444,8 @@ export const RemindersView: React.FC = () => {
             </div>
           ) : filteredReminders.length === 0 ? (
             <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-10 text-center space-y-3">
-              <div className="mx-auto flex items-center justify-center">
-                <LottieBadge animationData={bellCalmAnim} size={64} loop />
+              <div className="mx-auto h-12 w-12 rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center anim-habit-pulse">
+                <Bell className="h-6 w-6 anim-bell-swing" />
               </div>
               <h2 className="text-base font-semibold text-[var(--text-primary)]">
                 {reminders.length === 0 ? t('reminders.emptyTitle') : 'No reminders match your filters'}

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   CheckCircle2,
+  ChevronDown,
   Download,
   Fingerprint,
   Globe,
@@ -78,6 +79,19 @@ export const SettingsView: React.FC = () => {
   const removeActiveCurrency = useUIStore((s) => s.removeActiveCurrency);
   const [currencyToAdd, setCurrencyToAdd] = useState('');
   const [settingsTab, setSettingsTab] = useState<'general' | 'security' | 'ai_about'>('general');
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const langMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!langMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [langMenuOpen]);
 
   // Display name state
   const [displayNameInput, setDisplayNameInput] = useState(
@@ -402,19 +416,86 @@ export const SettingsView: React.FC = () => {
               {t('settings.languageDesc')}
             </p>
           </div>
-          <select
-            id="language-select"
-            aria-label={t('settings.languageTitle')}
-            value={profile.locale}
-            onChange={(e) => handleLocaleSelect(e.target.value as SupportedLocale)}
-            className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
-          >
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <option key={lang.id} value={lang.id}>
-                {lang.flag} {lang.nativeName} ({lang.englishName})
-              </option>
-            ))}
-          </select>
+          <div ref={langMenuRef} className="relative min-w-[230px]">
+            {(() => {
+              const currentLang =
+                SUPPORTED_LANGUAGES.find((l) => l.id === profile.locale) ?? SUPPORTED_LANGUAGES[0];
+              return (
+                <>
+                  <button
+                    id="language-select"
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={langMenuOpen}
+                    onClick={() => setLangMenuOpen((v) => !v)}
+                    className="w-full min-h-[42px] flex items-center justify-between gap-2.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
+                  >
+                    <span className="flex items-center gap-2.5 truncate">
+                      {currentLang.flagSrc ? (
+                        <img
+                          src={currentLang.flagSrc}
+                          alt={currentLang.englishName}
+                          className="h-4 w-5 rounded-[3px] object-cover shrink-0 border border-[var(--border-hairline)]"
+                        />
+                      ) : (
+                        <span className="text-base leading-none shrink-0" aria-hidden="true">
+                          {currentLang.flag}
+                        </span>
+                      )}
+                      <span className="truncate">
+                        {currentLang.nativeName} ({currentLang.englishName})
+                      </span>
+                    </span>
+                    <ChevronDown className="h-4 w-4 shrink-0 text-[var(--text-muted)]" />
+                  </button>
+
+                  {langMenuOpen && (
+                    <div
+                      role="listbox"
+                      aria-label={t('settings.languageTitle')}
+                      className="absolute end-0 z-30 mt-1.5 w-full min-w-[250px] max-h-72 overflow-y-auto rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-1 shadow-lg"
+                    >
+                      {SUPPORTED_LANGUAGES.map((lang) => {
+                        const active = profile.locale === lang.id;
+                        return (
+                          <button
+                            key={lang.id}
+                            type="button"
+                            role="option"
+                            aria-selected={active}
+                            onClick={() => {
+                              handleLocaleSelect(lang.id);
+                              setLangMenuOpen(false);
+                            }}
+                            className={`w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm transition-colors ${
+                              active
+                                ? 'bg-[var(--accent-soft)] text-[var(--accent)] font-semibold'
+                                : 'text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]'
+                            }`}
+                          >
+                            {lang.flagSrc ? (
+                              <img
+                                src={lang.flagSrc}
+                                alt={lang.englishName}
+                                className="h-4 w-5 rounded-[3px] object-cover shrink-0 border border-[var(--border-hairline)]"
+                              />
+                            ) : (
+                              <span className="text-base leading-none shrink-0" aria-hidden="true">
+                                {lang.flag}
+                              </span>
+                            )}
+                            <span className="truncate">
+                              {lang.nativeName} ({lang.englishName})
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </div>
         </div>
 
         <div className="p-6 space-y-5">

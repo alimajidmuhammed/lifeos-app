@@ -20,16 +20,54 @@ import {
   registerNotificationTapListener,
 } from './core/reminders/nativeNotifications';
 
-const DebtsView = lazy(() => import('./features/debts/ui/DebtsView').then((m) => ({ default: m.DebtsView })));
-const RemindersView = lazy(() => import('./features/reminders/ui/RemindersView').then((m) => ({ default: m.RemindersView })));
-const PlannerView = lazy(() => import('./features/planner/ui/PlannerView').then((m) => ({ default: m.PlannerView })));
-const NotesView = lazy(() => import('./features/notes/ui/NotesView').then((m) => ({ default: m.NotesView })));
-const VaultView = lazy(() => import('./features/vault/ui/VaultView').then((m) => ({ default: m.VaultView })));
-const HabitsView = lazy(() => import('./features/habits/ui/HabitsView').then((m) => ({ default: m.HabitsView })));
-const FinanceView = lazy(() => import('./features/finance/ui/FinanceView').then((m) => ({ default: m.FinanceView })));
-const QRCodeView = lazy(() => import('./features/qr/ui/QRCodeView').then((m) => ({ default: m.QRCodeView })));
-const SettingsView = lazy(() => import('./features/settings/ui/SettingsView').then((m) => ({ default: m.SettingsView })));
-const ModuleReadinessView = lazy(() => import('./features/modules/ui/ModuleReadinessView').then((m) => ({ default: m.ModuleReadinessView })));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  importer: () => Promise<{ default: T }>
+): React.LazyExoticComponent<T> {
+  return lazy(async () => {
+    const storageKey = 'lifeos_chunk_reload';
+    try {
+      const mod = await importer();
+      try {
+        sessionStorage.removeItem(storageKey);
+      } catch {
+        // Ignore
+      }
+      return mod;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isChunkErr =
+        /dynamically imported module|ChunkLoadError|Loading chunk|Failed to fetch/i.test(msg);
+      if (isChunkErr) {
+        let alreadyReloaded = false;
+        try {
+          alreadyReloaded = sessionStorage.getItem(storageKey) === '1';
+          if (!alreadyReloaded) {
+            sessionStorage.setItem(storageKey, '1');
+          }
+        } catch {
+          // Ignore
+        }
+        if (!alreadyReloaded) {
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+      }
+      throw err;
+    }
+  });
+}
+
+const DebtsView = lazyWithRetry(() => import('./features/debts/ui/DebtsView').then((m) => ({ default: m.DebtsView })));
+const RemindersView = lazyWithRetry(() => import('./features/reminders/ui/RemindersView').then((m) => ({ default: m.RemindersView })));
+const PlannerView = lazyWithRetry(() => import('./features/planner/ui/PlannerView').then((m) => ({ default: m.PlannerView })));
+const NotesView = lazyWithRetry(() => import('./features/notes/ui/NotesView').then((m) => ({ default: m.NotesView })));
+const VaultView = lazyWithRetry(() => import('./features/vault/ui/VaultView').then((m) => ({ default: m.VaultView })));
+const HabitsView = lazyWithRetry(() => import('./features/habits/ui/HabitsView').then((m) => ({ default: m.HabitsView })));
+const FinanceView = lazyWithRetry(() => import('./features/finance/ui/FinanceView').then((m) => ({ default: m.FinanceView })));
+const QRCodeView = lazyWithRetry(() => import('./features/qr/ui/QRCodeView').then((m) => ({ default: m.QRCodeView })));
+const SettingsView = lazyWithRetry(() => import('./features/settings/ui/SettingsView').then((m) => ({ default: m.SettingsView })));
+const ModuleReadinessView = lazyWithRetry(() => import('./features/modules/ui/ModuleReadinessView').then((m) => ({ default: m.ModuleReadinessView })));
 
 const RouteFallback = () => (
   <div className="flex items-center justify-center py-20">

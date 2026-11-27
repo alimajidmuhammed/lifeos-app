@@ -168,8 +168,7 @@ export const DebtReminderModal: React.FC<DebtReminderModalProps> = ({ debt, onCl
               >
                 <option value="en">English</option>
                 <option value="ar">العربية</option>
-                <option value="ckb">کوردی سۆرانی</option>
-                <option value="kmr">کوردی بادینی</option>
+                <option value="ckb">کوردی</option>
                 <option value="fa">فارسی</option>
                 <option value="tr">Türkçe</option>
                 <option value="ru">Русский</option>

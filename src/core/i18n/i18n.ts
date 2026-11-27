@@ -17,14 +17,14 @@ export interface LanguageOption {
   nativeName: string;
   englishName: string;
   flag: string;
+  flagSrc?: string;
   rtl: boolean;
 }
 
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { id: 'en', nativeName: 'English', englishName: 'English', flag: '🇺🇸', rtl: false },
   { id: 'ar', nativeName: 'العربية', englishName: 'Arabic', flag: '🇸🇦', rtl: true },
-  { id: 'ckb', nativeName: 'کوردی سۆرانی', englishName: 'Kurdish Sorani', flag: '🇮🇶', rtl: true },
-  { id: 'kmr', nativeName: 'کوردی بادینی', englishName: 'Kurdish Behdini', flag: '🇮🇶', rtl: true },
+  { id: 'ckb', nativeName: 'کوردی', englishName: 'Kurdish', flag: '☀️', flagSrc: '/flags/kurdistan.png', rtl: true },
   { id: 'fa', nativeName: 'فارسی', englishName: 'Persian', flag: '🇮🇷', rtl: true },
   { id: 'tr', nativeName: 'Türkçe', englishName: 'Turkish', flag: '🇹🇷', rtl: false },
   { id: 'ru', nativeName: 'Русский', englishName: 'Russian', flag: '🇷🇺', rtl: false },
@@ -69,6 +69,7 @@ export function applyDocumentLocale(locale: SupportedLocale): void {
 const initialLocale: SupportedLocale = (() => {
   try {
     const saved = localStorage.getItem('lifeos_locale') as SupportedLocale | null;
+    if (saved === 'kmr') return 'ckb';
     if (saved && ALL_LOCALE_IDS.has(saved)) return saved;
   } catch {
     // Ignore

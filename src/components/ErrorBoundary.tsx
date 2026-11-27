@@ -18,6 +18,17 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
 
   componentDidCatch(error: Error) {
     console.error('LifeinOne ErrorBoundary caught:', error);
+    const msg = error?.message || '';
+    if (/dynamically imported module|ChunkLoadError|Loading chunk/i.test(msg)) {
+      try {
+        if (sessionStorage.getItem('lifeos_chunk_reload') !== '1') {
+          sessionStorage.setItem('lifeos_chunk_reload', '1');
+          window.location.reload();
+        }
+      } catch {
+        // Ignore storage errors
+      }
+    }
   }
 
   render() {

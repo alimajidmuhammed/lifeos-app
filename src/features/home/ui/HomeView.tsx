@@ -15,6 +15,7 @@ import {
   Flame,
   FolderLock,
   Plus,
+  QrCode,
   Scale,
   Sparkles,
   Wallet,
@@ -434,6 +435,13 @@ export const HomeView: React.FC = () => {
         vaultSummary.totalDocs > 0
           ? t('home.vaultExpiringCount', { count: vaultSummary.expiredCount + vaultSummary.expiring90Count })
           : t('home.emptyHintVault'),
+    },
+    {
+      id: 'qr',
+      name: t('nav.qr'),
+      icon: QrCode,
+      primaryValue: null,
+      hint: 'Shareable link hub & QR',
     },
   ];
 

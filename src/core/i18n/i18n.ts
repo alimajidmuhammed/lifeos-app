@@ -16,20 +16,21 @@ export interface LanguageOption {
   id: SupportedLocale;
   nativeName: string;
   englishName: string;
+  flag: string;
   rtl: boolean;
 }
 
 export const SUPPORTED_LANGUAGES: LanguageOption[] = [
-  { id: 'en', nativeName: 'English', englishName: 'English', rtl: false },
-  { id: 'ar', nativeName: 'العربية', englishName: 'Arabic', rtl: true },
-  { id: 'ckb', nativeName: 'کوردی سۆرانی', englishName: 'Kurdish Sorani', rtl: true },
-  { id: 'kmr', nativeName: 'کوردی بادینی', englishName: 'Kurdish Behdini', rtl: true },
-  { id: 'fa', nativeName: 'فارسی', englishName: 'Persian', rtl: true },
-  { id: 'tr', nativeName: 'Türkçe', englishName: 'Turkish', rtl: false },
-  { id: 'ru', nativeName: 'Русский', englishName: 'Russian', rtl: false },
-  { id: 'id', nativeName: 'Bahasa Indonesia', englishName: 'Indonesian', rtl: false },
-  { id: 'es', nativeName: 'Español', englishName: 'Spanish', rtl: false },
-  { id: 'de', nativeName: 'Deutsch', englishName: 'German', rtl: false },
+  { id: 'en', nativeName: 'English', englishName: 'English', flag: '🇺🇸', rtl: false },
+  { id: 'ar', nativeName: 'العربية', englishName: 'Arabic', flag: '🇸🇦', rtl: true },
+  { id: 'ckb', nativeName: 'کوردی سۆرانی', englishName: 'Kurdish Sorani', flag: '🇮🇶', rtl: true },
+  { id: 'kmr', nativeName: 'کوردی بادینی', englishName: 'Kurdish Behdini', flag: '🇮🇶', rtl: true },
+  { id: 'fa', nativeName: 'فارسی', englishName: 'Persian', flag: '🇮🇷', rtl: true },
+  { id: 'tr', nativeName: 'Türkçe', englishName: 'Turkish', flag: '🇹🇷', rtl: false },
+  { id: 'ru', nativeName: 'Русский', englishName: 'Russian', flag: '🇷🇺', rtl: false },
+  { id: 'id', nativeName: 'Bahasa Indonesia', englishName: 'Indonesian', flag: '🇮🇩', rtl: false },
+  { id: 'es', nativeName: 'Español', englishName: 'Spanish', flag: '🇪🇸', rtl: false },
+  { id: 'de', nativeName: 'Deutsch', englishName: 'German', flag: '🇩🇪', rtl: false },
 ];
 
 export const RTL_LOCALES: SupportedLocale[] = ['ar', 'ckb', 'kmr', 'fa'];

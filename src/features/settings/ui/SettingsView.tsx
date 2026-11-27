@@ -26,6 +26,7 @@ import {
   verifyE2EPassphrase,
 } from '../../../core/crypto/e2eCrypto';
 import {
+  getDefaultCurrenciesForLocale,
   GLOBAL_CURRENCIES,
   getCurrencyMeta,
   type CurrencyCode,
@@ -156,7 +157,12 @@ export const SettingsView: React.FC = () => {
 
   const handleLocaleSelect = (loc: SupportedLocale) => {
     setLocale(loc);
-    void persistProfilePatch({ locale: loc });
+    const defaults = getDefaultCurrenciesForLocale(loc);
+    void persistProfilePatch({
+      locale: loc,
+      primaryCurrency: defaults.primary,
+      secondaryCurrency: defaults.secondary,
+    });
   };
 
   const handleCurrencyChange = (primary: CurrencyCode, secondary: CurrencyCode) => {
@@ -268,9 +274,9 @@ export const SettingsView: React.FC = () => {
       <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-1 w-fit">
         {(
           [
-            { id: 'general', label: 'General' },
-            { id: 'security', label: 'Security & Backup' },
-            { id: 'ai_about', label: 'AI & About' },
+            { id: 'general', label: t('ui.tabGeneral', 'General') },
+            { id: 'security', label: t('ui.tabSecurityBackup', 'Security & Backup') },
+            { id: 'ai_about', label: t('ui.tabAiAbout', 'AI & About') },
           ] as const
         ).map((tab) => (
           <button
@@ -552,10 +558,10 @@ export const SettingsView: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <h3 className="text-xs font-semibold text-[var(--text-primary)]">
-                  Active Currencies ({activeCurrencies.length})
+                  {t('ui.activeCurrencies', 'Active Currencies')} ({activeCurrencies.length})
                 </h3>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Currencies added here appear in Debts and Finance selectors.
+                  {t('ui.activeCurrenciesDesc', 'Currencies added here appear in Debts and Finance selectors.')}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -572,7 +578,7 @@ export const SettingsView: React.FC = () => {
                   }}
                   className="min-h-[38px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)]"
                 >
-                  <option value="">+ Add currency...</option>
+                  <option value="">{t('ui.addCurrencyPlaceholder', '+ Add currency...')}</option>
                   {GLOBAL_CURRENCIES.filter((c) => !activeCurrencies.includes(c.code)).map((c) => (
                     <option key={c.code} value={c.code}>
                       {c.code} — {c.name}
@@ -585,8 +591,6 @@ export const SettingsView: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               {activeCurrencies.map((code) => {
                 const meta = getCurrencyMeta(code);
-                const isPinned =
-                  code === profile.primaryCurrency || code === profile.secondaryCurrency;
                 return (
                   <span
                     key={code}
@@ -594,7 +598,7 @@ export const SettingsView: React.FC = () => {
                   >
                     <span className="font-numeric font-semibold text-[var(--accent)]">{code}</span>
                     <span className="text-[var(--text-muted)]">{meta.symbol}</span>
-                    {!isPinned && (
+                    {activeCurrencies.length > 1 && (
                       <button
                         type="button"
                         aria-label={`Remove ${code}`}

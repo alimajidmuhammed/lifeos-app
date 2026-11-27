@@ -132,6 +132,26 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
       return next;
     });
   };
+  const moveMobileTab = (index: number, delta: -1 | 1) => {
+    setMobileTabs((prev) => {
+      const target = index + delta;
+      if (target < 0 || target >= prev.length) return prev;
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      try {
+        localStorage.setItem(MOBILE_TABS_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  };
+  const orderedNavItems = [
+    ...mobileTabs
+      .map((id) => ALL_NAV_ITEMS.find((i) => i.id === id))
+      .filter((i): i is NavItem => Boolean(i)),
+    ...ALL_NAV_ITEMS.filter((i) => !mobileTabs.includes(i.id)),
+  ];
   const [drawerDragY, setDrawerDragY] = useState(0);
   const drawerTouchStartY = useRef<number | null>(null);
 
@@ -404,7 +424,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         </div>
 
         <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {ALL_NAV_ITEMS.map((item) => {
+          {orderedNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeRoute === item.id;
             return (
@@ -707,18 +727,62 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <div>
               <div className="flex items-center justify-between mb-2 px-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                  {editingMobileTabs ? 'Tap 4 tabs to pin to bottom bar' : t('home.modulesTitle')}
+                  {editingMobileTabs ? t('ui.customizeNavHint', 'Pin & sort 4 tabs') : t('home.modulesTitle')}
                 </span>
                 <button
                   type="button"
                   onClick={() => setEditingMobileTabs((v) => !v)}
                   className="text-[11px] font-medium text-[var(--accent)] hover:underline"
                 >
-                  {editingMobileTabs ? 'Done' : 'Customize bar'}
+                  {editingMobileTabs ? t('ui.done', 'Done') : t('ui.customizeBar', 'Customize bar')}
                 </button>
               </div>
+              {editingMobileTabs && (
+                <div className="mb-3 grid grid-cols-4 gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-1.5">
+                  {mobileTabs.map((tabId, idx) => {
+                    const meta = ALL_NAV_ITEMS.find((i) => i.id === tabId);
+                    if (!meta) return null;
+                    return (
+                      <div
+                        key={tabId}
+                        className="flex flex-col items-center gap-1 rounded-lg bg-[var(--bg-surface)] px-1 py-1.5 border border-[var(--border-hairline)]"
+                      >
+                        <span className="text-[10px] font-semibold text-[var(--text-primary)] truncate w-full text-center">
+                          {t(meta.labelKey)}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            aria-label="Move left"
+                            onClick={() => {
+                              void hapticLight();
+                              moveMobileTab(idx, -1);
+                            }}
+                            className="p-0.5 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-30"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === mobileTabs.length - 1}
+                            aria-label="Move right"
+                            onClick={() => {
+                              void hapticLight();
+                              moveMobileTab(idx, 1);
+                            }}
+                            className="p-0.5 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] disabled:opacity-30"
+                          >
+                            <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               <div className="grid grid-cols-3 gap-2">
-                {ALL_NAV_ITEMS.map((item) => {
+                {orderedNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeRoute === item.id;
                   const isPinned = mobileTabs.includes(item.id);

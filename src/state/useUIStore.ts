@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CurrencyCode, SupportedLocale } from '../core/currency/currency';
+import { getDefaultCurrenciesForLocale, type CurrencyCode, type SupportedLocale } from '../core/currency/currency';
 import {
   createDefaultUserProfile,
   type AiModuleToggles,
@@ -325,9 +325,16 @@ export const useUIStore = create<UIState>((set, get) => ({
   setLocale: (locale) => {
     applyDocumentLocale(locale);
     void i18n.changeLanguage(locale);
-    const next = { ...get().profile, locale };
+    const defaults = getDefaultCurrenciesForLocale(locale);
+    const next = {
+      ...get().profile,
+      locale,
+      primaryCurrency: defaults.primary,
+      secondaryCurrency: defaults.secondary,
+    };
     saveLocalProfile(next);
-    set({ profile: next });
+    saveActiveCurrencies(defaults.active);
+    set({ profile: next, activeCurrencies: defaults.active });
   },
 
   setCurrencies: (primaryCurrency, secondaryCurrency) => {
@@ -432,10 +439,19 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   removeActiveCurrency: (code) => {
     const { profile, activeCurrencies } = get();
-    if (code === profile.primaryCurrency || code === profile.secondaryCurrency) return;
+    if (activeCurrencies.length <= 1) return;
     const next = activeCurrencies.filter((c) => c !== code);
     if (next.length === 0) return;
+    const nextPrimary = code === profile.primaryCurrency ? next[0] : profile.primaryCurrency;
+    const nextSecondary =
+      code === profile.secondaryCurrency ? (next[1] ?? next[0]) : profile.secondaryCurrency;
+    const nextProfile = {
+      ...profile,
+      primaryCurrency: nextPrimary,
+      secondaryCurrency: nextSecondary,
+    };
+    saveLocalProfile(nextProfile);
     saveActiveCurrencies(next);
-    set({ activeCurrencies: next });
+    set({ profile: nextProfile, activeCurrencies: next });
   },
 }));

@@ -720,25 +720,29 @@ export const NotesView: React.FC = () => {
                     items={[
                       {
                         id: 'pin',
-                        label: selectedNote.pinned ? 'Unpin Note' : 'Pin Note',
+                        label: selectedNote.pinned
+                          ? t('ui.unpinNote', 'Unpin Note')
+                          : t('ui.pinNote', 'Pin Note'),
                         icon: Pin,
                         onClick: () => void togglePin(selectedNote),
                       },
                       {
                         id: 'lock',
-                        label: selectedNote.isEncrypted ? 'Unlock / Decrypt E2E' : 'Lock with E2E',
+                        label: selectedNote.isEncrypted
+                          ? t('ui.decrypt', 'Unlock / Decrypt E2E')
+                          : t('ui.lockE2E', 'Lock with E2E'),
                         icon: selectedNote.isEncrypted ? Unlock : Lock,
                         onClick: () => void handleToggleNoteLock(),
                       },
                       {
                         id: 'versions',
-                        label: 'Version History',
+                        label: t('ui.versionHistory', 'Version History'),
                         icon: History,
                         onClick: () => void handleOpenVersions(),
                       },
                       {
                         id: 'delete',
-                        label: 'Delete Note',
+                        label: t('ui.deleteNote', 'Delete Note'),
                         icon: Trash2,
                         tone: 'warn',
                         onClick: () => void handleDeleteNoteWithUndo(selectedNote),

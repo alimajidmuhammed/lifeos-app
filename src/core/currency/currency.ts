@@ -129,6 +129,35 @@ export const DEFAULT_FX_RATES_TO_IQD: FxRatesToIqd = Object.fromEntries(
   GLOBAL_CURRENCIES.map((c) => [c.code, c.defaultRateToIqd])
 );
 
+const LOCALE_DEFAULT_CURRENCY: Record<SupportedLocale, CurrencyCode> = {
+  en: 'EUR',
+  ar: 'IQD',
+  ckb: 'IQD',
+  kmr: 'IQD',
+  fa: 'IRR',
+  tr: 'TRY',
+  ru: 'RUB',
+  id: 'IDR',
+  es: 'EUR',
+  de: 'EUR',
+};
+
+export function getDefaultCurrenciesForLocale(locale: SupportedLocale): {
+  primary: CurrencyCode;
+  secondary: CurrencyCode;
+  active: CurrencyCode[];
+} {
+  if (locale === 'en') {
+    return { primary: 'USD', secondary: 'EUR', active: ['USD', 'EUR'] };
+  }
+  const local = LOCALE_DEFAULT_CURRENCY[locale] ?? 'IQD';
+  return {
+    primary: local,
+    secondary: 'USD',
+    active: ['USD', local],
+  };
+}
+
 /**
  * Converts an amount in minor units from one currency to another using either an explicit
  * numeric snapshot rate (units of target major per 1 unit of source major) or an FxRatesToIqd table.

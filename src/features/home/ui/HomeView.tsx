@@ -364,7 +364,7 @@ export const HomeView: React.FC = () => {
           : null,
       hint:
         debts.length > 0
-          ? `${debtMetrics.totalOpenCount} open`
+          ? `${debtMetrics.totalOpenCount} ${t('ui.openCount', 'open')}`
           : t('home.emptyHintDebts'),
     },
     {
@@ -374,7 +374,7 @@ export const HomeView: React.FC = () => {
       primaryValue: reminders.length > 0 ? String(remSummary.activeCount) : null,
       hint:
         reminders.length > 0
-          ? `${remSummary.dueTodayCount} due today`
+          ? `${remSummary.dueTodayCount} ${t('ui.dueTodayCount', 'due today')}`
           : t('home.emptyHintReminders'),
     },
     {
@@ -384,7 +384,7 @@ export const HomeView: React.FC = () => {
       primaryValue: tasks.length > 0 ? String(plannerSummary.activeCount) : null,
       hint:
         tasks.length > 0
-          ? `${plannerSummary.dueTodayCount} due today`
+          ? `${plannerSummary.dueTodayCount} ${t('ui.dueTodayCount', 'due today')}`
           : t('home.emptyHintPlanner'),
     },
     {
@@ -397,7 +397,7 @@ export const HomeView: React.FC = () => {
           : null,
       hint:
         financeSummary.transactionCount > 0
-          ? `${financeSummary.transactionCount} this month`
+          ? `${financeSummary.transactionCount} ${t('ui.thisMonthCount', 'this month')}`
           : t('home.emptyHintFinance'),
     },
     {
@@ -412,7 +412,7 @@ export const HomeView: React.FC = () => {
         habitsSummary.activeCount > 0
           ? habitsSummary.bestActiveStreak > 0
             ? t('home.streakDays', { count: habitsSummary.bestActiveStreak })
-            : 'Today'
+            : t('habits.todayTab', 'Today')
           : t('home.emptyHintHabits'),
       realRatio: habitsRatio,
     },
@@ -423,7 +423,7 @@ export const HomeView: React.FC = () => {
       primaryValue: notesSummary.totalNotes > 0 ? String(notesSummary.totalNotes) : null,
       hint:
         notesSummary.totalNotes > 0
-          ? `${notesSummary.pinnedCount} pinned`
+          ? `${notesSummary.pinnedCount} ${t('ui.pinnedCount', 'pinned')}`
           : t('home.emptyHintNotes'),
     },
     {
@@ -441,7 +441,7 @@ export const HomeView: React.FC = () => {
       name: t('nav.qr'),
       icon: QrCode,
       primaryValue: null,
-      hint: 'Shareable link hub & QR',
+      hint: t('ui.qrHint', 'Shareable link hub & QR'),
     },
   ];
 

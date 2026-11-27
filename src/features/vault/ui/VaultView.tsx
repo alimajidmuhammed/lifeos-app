@@ -361,49 +361,38 @@ export const VaultView: React.FC = () => {
         </div>
       </section>
 
-      {/* Security & Expiry 3-Card Strip (Distinct Vault Identity) */}
-      <section
-        aria-label="Document Vault metrics"
-        className="grid grid-cols-3 gap-2.5 sm:gap-3"
-      >
-        <div className="rounded-2xl border border-slate-500/20 bg-gradient-to-br from-slate-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
-          <div className="text-[11px] sm:text-xs font-medium text-[var(--text-muted)]">{t('vault.kpiTotal')}</div>
-          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
-            {summary.totalDocs}
-          </div>
-          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
-            {folders.length} {folders.length === 1 ? 'folder' : 'folders'} · {formatBytes(summary.totalBytes)}
-          </div>
+      {/* Compact 1-Line Vault Summary Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span>
+            <span className="text-[var(--text-muted)]">{t('vault.kpiTotal')}: </span>
+            <strong className="font-numeric text-[var(--text-primary)]">{summary.totalDocs}</strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('vault.kpiExpiring')}: </span>
+            <strong
+              className={`font-numeric ${
+                summary.expiredCount > 0
+                  ? 'text-red-600 dark:text-red-400'
+                  : summary.expiring30Count > 0
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-[var(--text-primary)]'
+              }`}
+            >
+              {summary.expiredCount + summary.expiring90Count}
+            </strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('vault.kpiEncrypted')}: </span>
+            <strong className="font-numeric text-[var(--accent)]">{summary.encryptedCount}</strong>
+          </span>
         </div>
-
-        <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
-          <div className="text-[11px] sm:text-xs font-semibold text-amber-700 dark:text-amber-400">{t('vault.kpiExpiring')}</div>
-          <div
-            className={`mt-1.5 font-numeric text-2xl font-bold ${
-              summary.expiredCount > 0
-                ? 'text-red-600 dark:text-red-400'
-                : summary.expiring30Count > 0
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-[var(--text-primary)]'
-            }`}
-          >
-            {summary.expiredCount + summary.expiring90Count}
-          </div>
-          <div className="mt-0.5 font-numeric text-[11px] text-[var(--text-muted)] truncate">
-            {summary.expiredCount} expired · {summary.expiring30Count} &le; 30d
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
-          <div className="text-[11px] sm:text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t('vault.kpiEncrypted')}</div>
-          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--accent)]">
-            {summary.encryptedCount}
-          </div>
-          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
-            {vaultUnlocked ? 'Vault unlocked' : 'Passphrase protected'}
-          </div>
-        </div>
-      </section>
+        <span className="font-numeric text-[var(--text-muted)]">
+          {formatBytes(summary.totalBytes)} · {vaultUnlocked ? 'Unlocked' : 'Protected'}
+        </span>
+      </div>
 
       {error && (
         <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50/50 dark:bg-red-950/20 px-4 py-3 text-xs text-red-700 dark:text-red-300">

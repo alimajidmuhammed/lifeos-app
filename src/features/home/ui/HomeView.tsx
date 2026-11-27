@@ -441,7 +441,7 @@ export const HomeView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* ── 1. Compact Header (max ~96px on mobile) ── */}
+      {/* ── 1. Calm Header + Single Ask AI Button ── */}
       <section className="flex items-end justify-between gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-medium text-[var(--text-muted)]">
@@ -459,134 +459,21 @@ export const HomeView: React.FC = () => {
             {firstName ? `${t('home.greeting')}, ${firstName}` : t('home.greeting')}
           </h1>
         </div>
-      </section>
 
-      {/* ── 2. Quick Capture Row (horizontally scrollable with edge fade, single AI entry in header) ── */}
-      <section aria-label={t('home.quickCaptureLabel')} className="relative">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 pe-10 -mx-1 px-1">
-          {(
-            [
-              { label: t('home.chipExpense'), icon: Plus, route: 'finance' as NavRoute },
-              { label: t('home.chipTask'), icon: CheckSquare, route: 'planner' as NavRoute },
-              { label: t('home.chipReminder'), icon: Bell, route: 'reminders' as NavRoute },
-              { label: t('home.chipScanDoc'), icon: Camera, route: 'vault' as NavRoute },
-              { label: t('home.chipNote'), icon: BookText, route: 'notes' as NavRoute },
-            ] as const
-          ).map((chip) => {
-            const Icon = chip.icon;
-            return (
-              <button
-                key={chip.label}
-                type="button"
-                onClick={() => {
-                  void hapticLight();
-                  setActiveRoute(chip.route);
-                }}
-                className="min-h-[44px] shrink-0 inline-flex items-center gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-2 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] btn-spring whitespace-nowrap"
-              >
-                <Icon className="h-4 w-4 text-[var(--accent)]" />
-                <span>{chip.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-y-0 end-0 w-10 bg-gradient-to-l rtl:bg-gradient-to-r from-[var(--bg-canvas)] to-transparent"
-        />
-      </section>
-
-      {/* ── 3. Slim Collapsible First-Run Setup Row (expands on tap) ── */}
-      {showOnboarding && (
-        <section
-          aria-label={t('home.onboardingTitle')}
-          className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] overflow-hidden"
+        <button
+          type="button"
+          onClick={() => {
+            void hapticLight();
+            setCommandPaletteOpen(true);
+          }}
+          className="min-h-[42px] shrink-0 inline-flex items-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-[var(--accent-hover)] btn-spring"
         >
-          <button
-            type="button"
-            onClick={() => {
-              void hapticLight();
-              setOnboardingExpanded((prev) => !prev);
-            }}
-            className="w-full min-h-[48px] px-4 py-2.5 flex items-center justify-between gap-3 text-start hover:bg-[var(--bg-subtle)]/40 transition-colors"
-          >
-            <div className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-14 h-1.5 rounded-full bg-[var(--bg-subtle)] overflow-hidden shrink-0">
-                <div
-                  className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
-                  style={{ width: `${Math.round((onboardingDoneCount / onboardingSteps.length) * 100)}%` }}
-                />
-              </div>
-              <span className="tabular-nums-ui text-xs font-semibold text-[var(--text-secondary)] shrink-0">
-                {t('home.setupProgress', {
-                  done: onboardingDoneCount,
-                  total: onboardingSteps.length,
-                })}
-              </span>
-              {nextOnboardingStep && (
-                <span className="text-xs text-[var(--text-muted)] truncate">
-                  · {nextOnboardingStep.label}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1 text-[var(--text-muted)] shrink-0">
-              {onboardingExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ArrowRight className="h-4 w-4" />
-              )}
-            </div>
-          </button>
+          <Sparkles className="h-4 w-4" />
+          <span>{t('common.quickAction')}</span>
+        </button>
+      </section>
 
-          {onboardingExpanded && (
-            <div className="px-4 pb-3 pt-2 border-t border-[var(--border-hairline)] space-y-2">
-              <div className="divide-y divide-[var(--border-hairline)]">
-                {onboardingSteps.map((step) => (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => {
-                      void hapticLight();
-                      setActiveRoute(step.route);
-                    }}
-                    className="w-full min-h-[44px] py-2 flex items-center justify-between gap-3 text-start hover:bg-[var(--bg-subtle)]/50 rounded-lg px-2 -mx-2 transition-colors"
-                  >
-                    <span className="flex items-center gap-3 min-w-0">
-                      {step.done ? (
-                        <CheckCircle2 className="h-5 w-5 text-[var(--status-ok)] shrink-0" />
-                      ) : (
-                        <Circle className="h-5 w-5 text-[var(--text-muted)] shrink-0" />
-                      )}
-                      <span
-                        className={`text-sm truncate ${
-                          step.done
-                            ? 'text-[var(--text-muted)]'
-                            : 'font-medium text-[var(--text-primary)]'
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                    </span>
-                    <ArrowRight className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
-                  </button>
-                ))}
-              </div>
-              <div className="pt-1 flex justify-end">
-                <button
-                  type="button"
-                  onClick={dismissOnboarding}
-                  className="min-h-[40px] inline-flex items-center gap-1 rounded-xl px-3 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
-                >
-                  <X className="h-3.5 w-3.5" />
-                  <span>{t('home.onboardingDismiss')}</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ── 4. Needs You Today (Unified Priority List) ── */}
+      {/* ── 2. Today's Focus ── */}
       <section aria-label={t('home.needsYouTitle')} className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-sm font-semibold text-[var(--text-secondary)]">
@@ -600,24 +487,18 @@ export const HomeView: React.FC = () => {
         </div>
 
         {needsYouToday.length === 0 ? (
-          <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 text-center space-y-2">
-            <div className="mx-auto flex items-center justify-center">
-              <LottieBadge
-                animationData={allCaughtUpAnim}
-                size={56}
-                fallback={
-                  <div className="h-10 w-10 rounded-full bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center">
-                    <CheckCircle2 className="h-5 w-5" />
-                  </div>
-                }
-              />
+          <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <CheckCircle2 className="h-5 w-5 text-[var(--accent)] shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                  {t('home.allCaughtUpTitle')}
+                </p>
+                <p className="text-xs text-[var(--text-muted)] truncate">
+                  {nextUpcoming ? `${t('home.nextUpLabel')}: ${nextUpcoming.title}` : t('home.allCaughtUpDesc')}
+                </p>
+              </div>
             </div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">
-              {t('home.allCaughtUpTitle')}
-            </p>
-            <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
-              {t('home.allCaughtUpDesc')}
-            </p>
             {nextUpcoming && (
               <button
                 type="button"
@@ -625,12 +506,9 @@ export const HomeView: React.FC = () => {
                   void hapticLight();
                   setActiveRoute(nextUpcoming.source === 'debt_due' ? 'debts' : 'reminders');
                 }}
-                className="mt-2 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]"
+                className="shrink-0 text-xs font-medium text-[var(--accent)] hover:underline"
               >
-                <Clock className="h-4 w-4 text-[var(--accent)]" />
-                <span>
-                  {t('home.nextUpLabel')}: {nextUpcoming.title}
-                </span>
+                View
               </button>
             )}
           </div>
@@ -697,7 +575,7 @@ export const HomeView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => void item.onSnooze?.()}
-                        className="min-h-[44px] px-2.5 rounded-xl border border-[var(--border-hairline)] text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
+                        className="min-h-[40px] px-2.5 rounded-xl border border-[var(--border-hairline)] text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
                       >
                         {t('home.snooze1h')}
                       </button>
@@ -706,7 +584,7 @@ export const HomeView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => void item.onComplete?.()}
-                        className="min-h-[44px] px-3 rounded-xl bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)] hover:opacity-90 inline-flex items-center gap-1"
+                        className="min-h-[40px] px-3 rounded-xl bg-[var(--accent-soft)] text-xs font-semibold text-[var(--accent)] hover:opacity-90 inline-flex items-center gap-1"
                       >
                         <Check className="h-3.5 w-3.5" />
                         <span>{t('home.markDone')}</span>
@@ -720,69 +598,7 @@ export const HomeView: React.FC = () => {
         )}
       </section>
 
-      {/* ── 5. AI Daily Briefing (collapsed by default) ── */}
-      <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] overflow-hidden">
-        <button
-          type="button"
-          onClick={() => {
-            if (!briefingOpen && !briefingResult) {
-              void handleGenerateBriefing();
-            } else {
-              void hapticLight();
-              setBriefingOpen((prev) => !prev);
-            }
-          }}
-          className="w-full min-h-[56px] px-5 py-3.5 flex items-center justify-between gap-3 text-start hover:bg-[var(--bg-subtle)]/40 transition-colors"
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-[var(--accent-soft)] text-[var(--accent)] flex items-center justify-center shrink-0">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                {t('home.briefingTitle')}
-              </h2>
-              <p className="text-xs text-[var(--text-muted)] truncate">
-                {t('home.briefingTapHint')}
-              </p>
-            </div>
-          </div>
-          {briefingOpen ? (
-            <ChevronUp className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
-          )}
-        </button>
-
-        {briefingOpen && (
-          <div className="px-5 pb-4 pt-3 border-t border-[var(--border-hairline)] space-y-3">
-            {briefingLoading ? (
-              <div className="space-y-2">
-                <div className="h-3.5 w-3/4 rounded bg-[var(--bg-subtle)] animate-pulse" />
-                <div className="h-3.5 w-1/2 rounded bg-[var(--bg-subtle)] animate-pulse" />
-              </div>
-            ) : briefingResult?.ok ? (
-              <p className="text-sm leading-relaxed text-[var(--text-primary)]">
-                {briefingResult.data.summary}
-              </p>
-            ) : briefingResult && !briefingResult.ok ? (
-              <p className="text-sm text-[var(--status-warn)]">{briefingResult.error}</p>
-            ) : null}
-
-            <button
-              type="button"
-              disabled={briefingLoading}
-              onClick={() => void handleGenerateBriefing()}
-              className="min-h-[44px] inline-flex items-center gap-2 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] disabled:opacity-50"
-            >
-              <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
-              <span>{briefingLoading ? t('home.synthesizing') : t('home.generateBriefing')}</span>
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* ── 6. Modules Grid (2-col mobile / 4-col desktop, real data only) ── */}
+      {/* ── 3. Clean Modules Grid ── */}
       <section aria-label={t('home.modulesTitle')} className="space-y-3">
         <h2 className="text-sm font-semibold text-[var(--text-secondary)] px-1">
           {t('home.modulesTitle')}
@@ -791,13 +607,6 @@ export const HomeView: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {moduleTiles.map((tile) => {
             const Icon = tile.icon;
-            const ringRadius = 14;
-            const ringCirc = 2 * Math.PI * ringRadius;
-            const ringOffset =
-              tile.realRatio !== null && tile.realRatio !== undefined
-                ? ringCirc - Math.min(1, Math.max(0, tile.realRatio)) * ringCirc
-                : 0;
-
             return (
               <button
                 key={tile.id}
@@ -806,51 +615,18 @@ export const HomeView: React.FC = () => {
                   void hapticLight();
                   setActiveRoute(tile.id);
                 }}
-                className="group p-4 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] hover:border-[var(--accent)]/50 transition-colors text-start btn-spring flex flex-col justify-between min-h-[116px]"
+                className="group p-4 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] hover:border-[var(--accent)]/50 transition-colors text-start btn-spring flex flex-col justify-between min-h-[108px]"
               >
-                <div className="flex items-center justify-between gap-2 w-full">
-                  <div className="h-9 w-9 rounded-xl bg-[var(--bg-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0">
-                    <Icon className="h-5 w-5" />
-                  </div>
-
-                  {tile.realRatio !== null && tile.realRatio !== undefined && (
-                    <svg className="h-8 w-8 -rotate-90 shrink-0" viewBox="0 0 36 36" aria-hidden="true">
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r={ringRadius}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3.5"
-                        className="text-[var(--bg-subtle)]"
-                      />
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r={ringRadius}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3.5"
-                        strokeLinecap="round"
-                        strokeDasharray={ringCirc}
-                        strokeDashoffset={ringOffset}
-                        className="text-[var(--accent)]"
-                      />
-                    </svg>
-                  )}
+                <div className="h-9 w-9 rounded-xl bg-[var(--bg-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0">
+                  <Icon className="h-5 w-5" />
                 </div>
 
                 <div className="mt-3 w-full">
                   <div className="text-sm font-semibold text-[var(--text-primary)] truncate">
                     {tile.name}
                   </div>
-                  {tile.primaryValue !== null ? (
-                    <div className="mt-0.5 tabular-nums-ui text-lg font-bold text-[var(--text-primary)] truncate">
-                      {tile.primaryValue}
-                    </div>
-                  ) : null}
-                  <div className="mt-0.5 text-xs text-[var(--text-muted)] truncate">
-                    {tile.hint}
+                  <div className="mt-0.5 tabular-nums-ui text-xs text-[var(--text-muted)] truncate">
+                    {tile.primaryValue !== null ? tile.primaryValue : tile.hint}
                   </div>
                 </div>
               </button>

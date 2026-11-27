@@ -30,13 +30,8 @@ import { useUIStore } from '../../../state/useUIStore';
 import { hapticLight, hapticSuccess } from '../../../core/native/mobileBridge';
 import { isNativePlatform } from '../../../core/reminders/nativeNotifications';
 import { ReminderFormModal } from './ReminderFormModal';
-import {
-  ChannelsDirectoryPanel,
-  RollingQueuePanel,
-  WorkloadBalancePanel,
-} from './RemindersSchedulerPanels';
+import { MoreActionsMenu } from '../../../components/MoreActionsMenu';
 
-type SubTab = 'agenda' | 'queue' | 'channels' | 'workload';
 type StatusFilter = 'active' | 'today' | 'overdue' | 'completed' | 'all';
 
 function formatDueDisplay(date: Date, locale: string): string {
@@ -59,8 +54,6 @@ export const RemindersView: React.FC = () => {
     reminders,
     loading,
     quietHours,
-    rollingQueue,
-    sevenDayWorkload,
     summary,
     notifPermission,
     requestBrowserNotifications,
@@ -75,7 +68,6 @@ export const RemindersView: React.FC = () => {
     isCloudSynced,
   } = useReminders();
 
-  const [subTab, setSubTab] = useState<SubTab>('agenda');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [categoryFilter, setCategoryFilter] = useState<'all' | ReminderCategory>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -211,39 +203,42 @@ export const RemindersView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {notifPermission === 'granted' ? (
-            <button
-              type="button"
-              onClick={handleSendTest}
-              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 transition-colors whitespace-nowrap"
-            >
-              <Bell className="h-4 w-4" />
-              <span>{isNativePlatform() ? t('ui.testNativeAlert') : t('ui.testPushAlert')}</span>
-            </button>
-          ) : notifPermission === 'denied' ? (
-            <button
-              type="button"
-              onClick={() => void handleRequestNotif()}
-              className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors whitespace-nowrap"
-            >
-              <Bell className="h-4 w-4" />
-              <span>{t('ui.alertsOff')}</span>
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => {
-              setEditingReminder(null);
-              setFormFocusAi(true);
-              setFormOpen(true);
-            }}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs sm:text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors whitespace-nowrap"
-          >
-            <Sparkles className="h-4 w-4 text-[var(--accent)]" />
-            <span>{t('reminders.aiQuickSchedule')}</span>
-          </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <MoreActionsMenu
+            items={[
+              {
+                id: 'ai_quick',
+                label: t('reminders.aiQuickSchedule'),
+                icon: Sparkles,
+                tone: 'accent',
+                onClick: () => {
+                  setEditingReminder(null);
+                  setFormFocusAi(true);
+                  setFormOpen(true);
+                },
+              },
+              ...(notifPermission === 'granted'
+                ? [
+                    {
+                      id: 'test_alert',
+                      label: isNativePlatform() ? t('ui.testNativeAlert') : t('ui.testPushAlert'),
+                      icon: Bell,
+                      onClick: handleSendTest,
+                    },
+                  ]
+                : notifPermission !== 'unsupported'
+                  ? [
+                      {
+                        id: 'enable_alerts',
+                        label: t('reminders.enableNotifBtn'),
+                        icon: Bell,
+                        tone: 'warn' as const,
+                        onClick: () => void handleRequestNotif(),
+                      },
+                    ]
+                  : []),
+            ]}
+          />
 
           <button
             type="button"
@@ -262,108 +257,34 @@ export const RemindersView: React.FC = () => {
 
       {notifPermission === 'unsupported' && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs text-amber-800 dark:text-amber-200">
-          <strong>On iPhone / iPad:</strong> Apple requires installing the app first. Tap <strong>Share → Add to Home Screen</strong>, then open LifeinOne from your Home Screen icon to enable lock-screen notifications.
+          <strong>On iPhone / iPad:</strong> Tap <strong>Share → Add to Home Screen</strong> to enable lock-screen notifications.
         </div>
       )}
 
-      {/* Warm Focus 3-Card Summary (Distinct Reminders Identity) */}
-      <section
-        aria-label="Reminders summary"
-        className="grid grid-cols-3 gap-2.5 sm:gap-3"
-      >
-        <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4">
-          <div className="text-[11px] sm:text-xs font-medium text-amber-700 dark:text-amber-400">{t('reminders.kpiDueToday')}</div>
-          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
-            {summary.dueTodayCount}
-          </div>
-          <div className="mt-0.5 font-numeric text-[11px] text-[var(--text-muted)]">
-            {summary.activeCount} active
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4">
-          <div className="text-[11px] sm:text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiOverdue')}</div>
-          <div
-            className={`mt-1.5 font-numeric text-2xl font-bold ${
-              summary.overdueCount > 0
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-[var(--text-primary)]'
-            }`}
-          >
+      {/* Compact 1-Line Summary Bar */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3 text-xs">
+        <span>
+          <span className="text-[var(--text-muted)]">{t('reminders.kpiDueToday')}: </span>
+          <strong className="font-numeric text-[var(--accent)]">{summary.dueTodayCount}</strong>
+        </span>
+        <span className="text-[var(--text-muted)]">·</span>
+        <span>
+          <span className="text-[var(--text-muted)]">{t('reminders.kpiOverdue')}: </span>
+          <strong className={`font-numeric ${summary.overdueCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-[var(--text-primary)]'}`}>
             {summary.overdueCount}
-          </div>
-          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
-            {summary.overdueCount > 0 ? 'Needs action' : 'On schedule'}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4">
-          <div className="text-[11px] sm:text-xs font-medium text-[var(--text-muted)]">{t('reminders.kpiRecurring')}</div>
-          <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
-            {summary.recurringActiveCount}
-          </div>
-          <div className="mt-0.5 text-[11px] text-[var(--text-muted)] truncate">
-            Auto-repeating
-          </div>
-        </div>
-      </section>
-
-      {/* Segmented View Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div
-          role="tablist"
-          aria-label="Reminders views"
-          className="inline-flex flex-wrap items-center gap-1 p-1 rounded-xl bg-[var(--bg-subtle)]"
-        >
-          {(
-            [
-              { id: 'agenda', label: t('reminders.tabAgenda') },
-              { id: 'queue', label: t('reminders.tabQueue') },
-              { id: 'channels', label: t('reminders.tabChannels') },
-              { id: 'workload', label: t('reminders.tabWorkload') },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={subTab === tab.id}
-              type="button"
-              onClick={() => setSubTab(tab.id)}
-              className={`min-h-[38px] px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-                subTab === tab.id
-                  ? 'bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-xs'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          </strong>
+        </span>
+        <span className="text-[var(--text-muted)]">·</span>
+        <span>
+          <span className="text-[var(--text-muted)]">{t('reminders.kpiRecurring')}: </span>
+          <strong className="font-numeric text-[var(--text-primary)]">{summary.recurringActiveCount}</strong>
+        </span>
+        <span className="text-[var(--text-muted)]">·</span>
+        <span className="font-numeric text-[var(--text-muted)]">{summary.activeCount} active</span>
       </div>
 
-      {/* Sub-view Content */}
-      {subTab === 'queue' ? (
-        <RollingQueuePanel
-          queue={rollingQueue}
-          quietHours={quietHours}
-          locale={profile.locale}
-          notifPermission={notifPermission}
-          onRequestPermission={handleRequestNotif}
-          onSendTest={handleSendTest}
-        />
-      ) : subTab === 'channels' ? (
-        <ChannelsDirectoryPanel
-          channelCounts={rollingQueue.channelCounts}
-          onFilterChannel={(cat) => {
-            setCategoryFilter(cat);
-            setStatusFilter('active');
-            setSubTab('agenda');
-          }}
-        />
-      ) : subTab === 'workload' ? (
-        <WorkloadBalancePanel workload={sevenDayWorkload} />
-      ) : (
-        <div className="space-y-4">
+      {/* Agenda Content */}
+      <div className="space-y-4">
           {/* Search & Filter Toolbar */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
@@ -689,7 +610,6 @@ export const RemindersView: React.FC = () => {
             </div>
           )}
         </div>
-      )}
 
       {/* Add / Edit Reminder Modal */}
       <ReminderFormModal

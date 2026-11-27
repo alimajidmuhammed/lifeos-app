@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   Archive,
-  BarChart3,
   CalendarDays,
   Check,
   Edit3,
@@ -13,7 +12,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
   addDaysYmd,
-  analyzeHabitBreakPatterns,
   buildHabitHeatmap,
   collectHabitCompletedDays,
   computeHabitStreakStats,
@@ -29,7 +27,7 @@ import { useHabits } from '../../../hooks/useHabits';
 import { useUIStore } from '../../../state/useUIStore';
 import { ModalPortal } from '../../../components/ModalPortal';
 
-type HabitsTab = 'today' | 'heatmap' | 'insights';
+type HabitsTab = 'today' | 'heatmap';
 
 const CATEGORY_LABELS: Record<HabitCategory, string> = {
   health: 'Health',
@@ -113,11 +111,6 @@ export const HabitsView: React.FC = () => {
 
   const heatmapCells = useMemo(
     () => buildHabitHeatmap(inspectedDays, todayYmd, 84),
-    [inspectedDays, todayYmd]
-  );
-
-  const breakInsights = useMemo(
-    () => analyzeHabitBreakPatterns(inspectedDays, todayYmd, 56),
     [inspectedDays, todayYmd]
   );
 
@@ -250,56 +243,25 @@ export const HabitsView: React.FC = () => {
         </div>
       )}
 
-      {/* Emerald Streak Hero Strip (Distinct Habits Identity) */}
-      <section
-        aria-label="Habits KPI summary"
-        className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-      >
-        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-              {t('habits.kpiCompletedToday')}
-            </div>
-            <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
-              {summary.completedTodayCount} <span className="text-sm font-normal text-[var(--text-muted)]">/ {summary.activeCount}</span>
-            </div>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-            <Check className="h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-orange-500/25 bg-gradient-to-br from-orange-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5 flex items-center justify-between">
-          <div>
-            <div className="text-xs font-semibold text-orange-700 dark:text-orange-400">
-              {t('habits.kpiBestStreak')}
-            </div>
-            <div className="mt-1.5 font-numeric text-2xl font-bold text-[var(--text-primary)]">
-              {summary.bestActiveStreak}d
-            </div>
-          </div>
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-500/15 text-orange-500">
-            <Flame className="h-5 w-5" />
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4 sm:p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--text-muted)]">
-              {t('habits.kpiConsistency30d')}
-            </span>
-            <span className="font-numeric text-lg font-bold text-[var(--text-primary)]">
-              {summary.avgConsistency30dPct}%
-            </span>
-          </div>
-          <div className="mt-3 h-2 w-full rounded-full bg-[var(--bg-subtle)] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${summary.avgConsistency30dPct}%` }}
-            />
-          </div>
-        </div>
-      </section>
+      {/* Compact 1-Line Summary Bar */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3 text-xs">
+        <span>
+          <span className="text-[var(--text-muted)]">{t('habits.kpiCompletedToday')}: </span>
+          <strong className="font-numeric text-[var(--accent)]">
+            {summary.completedTodayCount} / {summary.activeCount}
+          </strong>
+        </span>
+        <span className="text-[var(--text-muted)]">·</span>
+        <span>
+          <span className="text-[var(--text-muted)]">{t('habits.kpiBestStreak')}: </span>
+          <strong className="font-numeric text-orange-500">{summary.bestActiveStreak}d</strong>
+        </span>
+        <span className="text-[var(--text-muted)]">·</span>
+        <span>
+          <span className="text-[var(--text-muted)]">{t('habits.kpiConsistency30d')}: </span>
+          <strong className="font-numeric text-[var(--text-primary)]">{summary.avgConsistency30dPct}%</strong>
+        </span>
+      </div>
 
       {/* Underline Segmented Tabs */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-hairline)]">
@@ -308,7 +270,6 @@ export const HabitsView: React.FC = () => {
             [
               { id: 'today', label: t('habits.tabToday'), icon: Flame },
               { id: 'heatmap', label: t('habits.tabHeatmap'), icon: CalendarDays },
-              { id: 'insights', label: t('habits.tabInsights'), icon: BarChart3 },
             ] as const
           ).map((item) => {
             const Icon = item.icon;
@@ -582,72 +543,6 @@ export const HabitsView: React.FC = () => {
                 Completed
               </span>
             </div>
-          </div>
-        </section>
-      ) : inspectedHabit ? (
-        /* Tab 3: Deterministic Break-Pattern Insights */
-        <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-5 sm:p-6 space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold text-[var(--text-primary)]">
-                Weekday Break-Pattern Analysis (Past 8 Weeks)
-              </h2>
-              <p className="mt-0.5 text-xs text-[var(--text-muted)]">
-                Average streak before break:{' '}
-                <span className="font-numeric font-semibold text-[var(--text-primary)]">
-                  {breakInsights.averageStreakBeforeBreak}d
-                </span>
-              </p>
-            </div>
-            <select
-              aria-label="Select habit for break patterns"
-              value={inspectedHabit.id}
-              onChange={(e) => setSelectedHabitId(e.target.value)}
-              className="min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-sm text-[var(--text-primary)]"
-            >
-              {habits.map((h) => (
-                <option key={h.id} value={h.id}>
-                  {h.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-3">
-            {breakInsights.weekdayCompletionRates.map((row) => {
-              const isWeakest = breakInsights.weakestWeekdayIndex === row.weekday;
-              return (
-                <div key={row.weekday} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span
-                      className={`font-medium ${
-                        isWeakest
-                          ? 'text-amber-700 dark:text-amber-400'
-                          : 'text-[var(--text-primary)]'
-                      }`}
-                    >
-                      {row.label}
-                      {isWeakest ? ' · Weakest day' : ''}
-                    </span>
-                    <span className="font-numeric text-[var(--text-secondary)]">
-                      {row.pct}% ({row.totalOpportunities} wks)
-                    </span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[var(--bg-subtle)] overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-200 ${
-                        isWeakest ? 'bg-amber-500' : 'bg-[var(--accent)]'
-                      }`}
-                      style={{ width: `${row.pct}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] p-4 text-sm text-[var(--text-secondary)]">
-            {breakInsights.suggestion}
           </div>
         </section>
       ) : null}

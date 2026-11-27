@@ -553,49 +553,33 @@ export const QRCodeView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Preset + Custom Theme & Gradient Builder */}
-                <div className="space-y-3 pt-1 border-t border-[var(--border-hairline)]">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
+                {/* Theme Dropdown */}
+                <div className="space-y-3 pt-2 border-t border-[var(--border-hairline)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <label htmlFor="qr-theme-select" className="text-xs font-semibold text-[var(--text-primary)] flex items-center gap-1.5">
                       <Palette className="h-3.5 w-3.5 text-[var(--accent)]" />
-                      <span>Theme &amp; Custom Colors</span>
+                      <span>Theme</span>
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => updateCustomTheme({})}
-                      className={`rounded-lg px-2.5 py-1 text-[11px] font-semibold border transition-colors ${
-                        linkProfile.theme === 'custom'
-                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
-                          : 'border-[var(--border-hairline)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                      }`}
+                    <select
+                      id="qr-theme-select"
+                      value={linkProfile.theme}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === 'custom') {
+                          updateCustomTheme({});
+                        } else {
+                          setLinkProfile((p) => ({ ...p, theme: val as typeof p.theme }));
+                        }
+                      }}
+                      className="min-h-[38px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                     >
-                      Custom Colors
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {LINK_PROFILE_THEMES.map((th) => {
-                      const active = linkProfile.theme === th.id;
-                      return (
-                        <button
-                          key={th.id}
-                          type="button"
-                          aria-pressed={active}
-                          onClick={() => setLinkProfile((p) => ({ ...p, theme: th.id }))}
-                          className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 text-start text-xs font-medium transition-all btn-spring ${
-                            active
-                              ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--text-primary)]'
-                              : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                          }`}
-                        >
-                          <span
-                            className="h-4 w-4 shrink-0 rounded-full border border-black/10"
-                            style={{ background: th.swatch }}
-                          />
-                          <span className="truncate">{th.label}</span>
-                        </button>
-                      );
-                    })}
+                      {LINK_PROFILE_THEMES.map((th) => (
+                        <option key={th.id} value={th.id}>
+                          {th.label}
+                        </option>
+                      ))}
+                      <option value="custom">Custom Colors</option>
+                    </select>
                   </div>
 
                   {/* Custom Background, Gradient, Text & Button Colors */}
@@ -686,36 +670,25 @@ export const QRCodeView: React.FC = () => {
                   <span>Your Links ({linkProfile.links.length})</span>
                 </h2>
 
-                {/* Platform Icon Picker */}
-                <div className="flex flex-wrap gap-1.5">
-                  {LINK_ICON_OPTIONS.map((opt) => {
-                    const active = newIcon === opt.key;
-                    return (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        title={opt.label}
-                        onClick={() => setNewIcon(opt.key)}
-                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium transition-colors btn-spring ${
-                          active
-                            ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
-                            : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                        }`}
-                      >
-                        <LinkPlatformIcon icon={opt.key} className="h-3.5 w-3.5" />
-                        <span>{opt.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
                 <form onSubmit={handleAddLink} className="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                  <select
+                    aria-label="Platform icon"
+                    value={newIcon}
+                    onChange={(e) => setNewIcon(e.target.value as LinkIconKey)}
+                    className="sm:col-span-3 min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                  >
+                    {LINK_ICON_OPTIONS.map((opt) => (
+                      <option key={opt.key} value={opt.key}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
                   <input
                     type="text"
                     value={newLabel}
                     onChange={(e) => setNewLabel(e.target.value)}
                     placeholder="Title (e.g. Telegram)"
-                    className="sm:col-span-4 min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    className="sm:col-span-3 min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                   />
                   <input
                     type="text"
@@ -723,7 +696,7 @@ export const QRCodeView: React.FC = () => {
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
                     placeholder="URL, phone, or email"
-                    className="sm:col-span-6 min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    className="sm:col-span-4 min-h-[40px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-canvas)] px-3 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
                   />
                   <button
                     type="submit"

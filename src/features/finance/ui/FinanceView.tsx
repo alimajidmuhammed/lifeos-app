@@ -48,6 +48,7 @@ import {
 import { useFinance } from '../../../hooks/useFinance';
 import { useReminders } from '../../../hooks/useReminders';
 import { useUIStore } from '../../../state/useUIStore';
+import { MoreActionsMenu } from '../../../components/MoreActionsMenu';
 
 type FinanceTab = 'ledger' | 'budgets' | 'subscriptions';
 type TransactionType = 'income' | 'expense';
@@ -348,43 +349,45 @@ export const FinanceView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        <div className="flex items-center gap-2">
           <input
             type="month"
             aria-label="Filter finance month"
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
-            className="min-h-[38px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 font-numeric text-xs text-[var(--text-primary)]"
+            className="min-h-[42px] rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 font-numeric text-xs text-[var(--text-primary)]"
+          />
+          <MoreActionsMenu
+            items={[
+              {
+                id: 'ai_quick',
+                label: t('finance.aiQuickEntry'),
+                icon: Sparkles,
+                tone: 'accent',
+                onClick: () => openTxModal(true),
+              },
+              {
+                id: 'import_csv',
+                label: t('finance.importCsv'),
+                icon: Upload,
+                onClick: () => setCsvModalOpen(true),
+              },
+              ...(transactions.length > 0
+                ? [
+                    {
+                      id: 'export_csv',
+                      label: t('finance.exportCsv'),
+                      icon: Download,
+                      onClick: handleExportCsv,
+                    },
+                  ]
+                : []),
+            ]}
           />
           <button
             type="button"
-            onClick={() => openTxModal(true)}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-[var(--accent)]" />
-            <span>{t('finance.aiQuickEntry')}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setCsvModalOpen(true)}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
-          >
-            <Upload className="h-3.5 w-3.5" />
-            <span>{t('finance.importCsv')}</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={transactions.length === 0}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] disabled:opacity-50 whitespace-nowrap"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>{t('finance.exportCsv')}</span>
-          </button>
-          <button
-            type="button"
             onClick={() => openTxModal(false)}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-1.5 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] transition-colors whitespace-nowrap"
+            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs sm:text-sm font-medium text-white hover:bg-[var(--accent-hover)] transition-colors whitespace-nowrap"
           >
             <Plus className="h-4 w-4" />
             <span>{t('finance.addTransaction')}</span>
@@ -401,93 +404,43 @@ export const FinanceView: React.FC = () => {
         </div>
       )}
 
-      {/* Wallet Cards Strip (Distinct Finance Identity) */}
-      <section
-        aria-label="Monthly finance KPI strip"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"
-      >
-        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-              {t('finance.kpiIncome')}
-            </span>
-            <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
-          </div>
-          <div className="mt-2 font-numeric text-xl font-bold text-emerald-600 dark:text-emerald-400">
-            +{formatMoney(monthlySummary.incomePrimaryMinor, profile.primaryCurrency, profile.locale)}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {t('finance.monthlyEntries', { count: monthlySummary.transactionCount })}
-          </div>
+      {/* Compact 1-Line Finance Summary Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span>
+            <span className="text-[var(--text-muted)]">{t('finance.kpiIncome')}: </span>
+            <strong className="font-numeric text-emerald-600 dark:text-emerald-400">
+              +{formatMoney(monthlySummary.incomePrimaryMinor, profile.primaryCurrency, profile.locale)}
+            </strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('finance.kpiExpenses')}: </span>
+            <strong className="font-numeric text-rose-600 dark:text-rose-400">
+              -{formatMoney(monthlySummary.expensePrimaryMinor, profile.primaryCurrency, profile.locale)}
+            </strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('finance.kpiNetCashflow')}: </span>
+            <strong
+              className={`font-numeric ${
+                monthlySummary.netPrimaryMinor > 0
+                  ? 'text-[var(--accent)]'
+                  : monthlySummary.netPrimaryMinor < 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-[var(--text-primary)]'
+              }`}
+            >
+              {monthlySummary.netPrimaryMinor > 0 ? '+' : ''}
+              {formatMoney(monthlySummary.netPrimaryMinor, profile.primaryCurrency, profile.locale)}
+            </strong>
+          </span>
         </div>
-
-        <div className="rounded-2xl border border-rose-500/25 bg-gradient-to-br from-rose-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
-              {t('finance.kpiExpenses')}
-            </span>
-            <ArrowUpRight className="h-4 w-4 text-rose-500" />
-          </div>
-          <div className="mt-2 font-numeric text-xl font-bold text-rose-600 dark:text-rose-400">
-            -{formatMoney(monthlySummary.expensePrimaryMinor, profile.primaryCurrency, profile.locale)}
-          </div>
-          <div className="mt-1 text-xs text-[var(--text-muted)] truncate">
-            {monthlySummary.expenseBreakdown[0]
-              ? `${t(`finance.cat.${monthlySummary.expenseBreakdown[0].category}`, { defaultValue: CATEGORY_LABELS[monthlySummary.expenseBreakdown[0].category] })} (${monthlySummary.expenseBreakdown[0].sharePct}%)`
-              : t('finance.noExpensesLogged')}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-violet-700 dark:text-violet-400">
-              {t('finance.kpiNetCashflow')}
-            </span>
-            <Wallet className="h-4 w-4 text-violet-500" />
-          </div>
-          <div
-            className={`mt-2 font-numeric text-xl font-bold ${
-              monthlySummary.netPrimaryMinor > 0
-                ? 'text-[var(--accent)]'
-                : monthlySummary.netPrimaryMinor < 0
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-[var(--text-primary)]'
-            }`}
-          >
-            {monthlySummary.netPrimaryMinor > 0 ? '+' : ''}
-            {formatMoney(monthlySummary.netPrimaryMinor, profile.primaryCurrency, profile.locale)}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)] flex flex-wrap items-center gap-1">
-            <span dir="ltr" className="inline-block">
-              ≈ {formatMoney(secondaryNetMinor, profile.secondaryCurrency, profile.locale)}
-            </span>
-            <span>·</span>
-            <span>{t('finance.savingsRate', { pct: monthlySummary.savingsRatePct })}</span>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-[var(--text-muted)]">
-              {t('finance.kpiSubscriptions')}
-            </span>
-            <Repeat className="h-4 w-4 text-[var(--text-muted)]" />
-          </div>
-          <div className="mt-2 font-numeric text-xl font-bold text-[var(--text-primary)]">
-            {formatMoney(
-              subscriptionMetrics.monthlyBurnPrimaryMinor,
-              profile.primaryCurrency,
-              profile.locale
-            )}
-          </div>
-          <div className="mt-1 font-numeric text-xs text-[var(--text-muted)]">
-            {t('finance.subsActiveDue', {
-              active: subscriptionMetrics.activeCount,
-              due: subscriptionMetrics.upcomingWithin14Days.length,
-            })}
-          </div>
-        </div>
-      </section>
+        <span className="font-numeric text-[var(--text-muted)]">
+          {subscriptionMetrics.activeCount} subs · {monthlySummary.savingsRatePct}% saved
+        </span>
+      </div>
 
       {/* Underline Segmented Tabs */}
       <div className="flex items-center justify-between gap-4 border-b border-[var(--border-hairline)]">

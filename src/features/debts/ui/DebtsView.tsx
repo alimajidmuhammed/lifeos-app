@@ -28,13 +28,10 @@ import { DebtFormModal } from './DebtFormModal';
 import { DebtPaymentModal } from './DebtPaymentModal';
 import { DebtReminderModal } from './DebtReminderModal';
 import { DebtDetailDrawer } from './DebtDetailDrawer';
-import {
-  CashFlowForecastPanel,
-  PayoffPlannerPanel,
-  PeopleLedgerPanel,
-} from './DebtsAnalyticsPanels';
+import { PeopleLedgerPanel } from './DebtsAnalyticsPanels';
+import { MoreActionsMenu } from '../../../components/MoreActionsMenu';
 
-type SubTab = 'ledger' | 'people' | 'planner' | 'forecast';
+type SubTab = 'ledger' | 'people';
 type StatusFilter = 'open' | 'overdue' | 'settled' | 'all';
 type DirectionFilter = 'all' | DebtDirection;
 
@@ -152,19 +149,38 @@ export const DebtsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              setEditingDebt(null);
-              setFormFocusAi(true);
-              setFormOpen(true);
-            }}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs sm:text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors whitespace-nowrap"
-          >
-            <Sparkles className="h-4 w-4 text-[var(--accent)]" />
-            <span>{t('debts.aiQuickEntry')}</span>
-          </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <MoreActionsMenu
+            items={[
+              {
+                id: 'ai_quick',
+                label: t('debts.aiQuickEntry'),
+                icon: Sparkles,
+                tone: 'accent',
+                onClick: () => {
+                  setEditingDebt(null);
+                  setFormFocusAi(true);
+                  setFormOpen(true);
+                },
+              },
+              {
+                id: 'fx_rates',
+                label: t('debts.fxRatesBtn'),
+                icon: SlidersHorizontal,
+                onClick: () => setFxEditorOpen((v) => !v),
+              },
+              ...(debts.length > 0
+                ? [
+                    {
+                      id: 'export_csv',
+                      label: t('debts.exportCsv'),
+                      icon: Download,
+                      onClick: handleExportCsv,
+                    },
+                  ]
+                : []),
+            ]}
+          />
 
           <button
             type="button"
@@ -181,87 +197,49 @@ export const DebtsView: React.FC = () => {
         </div>
       </section>
 
-      {/* 2-Card Split Ledger Summary (Distinct Debts Identity) */}
-      <section
-        aria-label="Debts financial summary"
-        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-      >
-        <div className="rounded-2xl border border-emerald-500/25 bg-gradient-to-br from-emerald-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-5 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-              {t('debts.owedToMe')}
-            </span>
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-              <ArrowDownLeft className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="mt-2 font-numeric text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {formatMoney(metrics.equivalentOwedToMePrimaryMinor, primaryCur, profile.locale)}
-          </div>
-          <div className="mt-1.5 font-numeric text-xs text-[var(--text-muted)]">
-            {primaryCur}: {formatMoney(metrics.byCurrency[primaryCur].owedToMeMinor, primaryCur, profile.locale)} ·{' '}
-            {secondaryCur}: {formatMoney(metrics.byCurrency[secondaryCur].owedToMeMinor, secondaryCur, profile.locale)}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-rose-500/25 bg-gradient-to-br from-rose-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-5 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">
-              {t('debts.iOwe')}
-            </span>
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/15 text-rose-600 dark:text-rose-400">
-              <ArrowUpRight className="h-4 w-4" />
-            </span>
-          </div>
-          <div className="mt-2 font-numeric text-2xl font-bold text-rose-600 dark:text-rose-400">
-            {formatMoney(metrics.equivalentIOwePrimaryMinor, primaryCur, profile.locale)}
-          </div>
-          <div className="mt-1.5 font-numeric text-xs text-[var(--text-muted)]">
-            {primaryCur}: {formatMoney(metrics.byCurrency[primaryCur].iOweMinor, primaryCur, profile.locale)} ·{' '}
-            {secondaryCur}: {formatMoney(metrics.byCurrency[secondaryCur].iOweMinor, secondaryCur, profile.locale)}
-          </div>
-        </div>
-      </section>
-
-      {/* Compact Net & Overdue Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-5 py-3.5 text-xs">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="font-medium text-[var(--text-muted)]">{t('debts.netPosition')}:</span>
-          <span
-            className={`font-numeric text-sm font-bold ${
-              metrics.equivalentNetPrimaryMinor > 0
-                ? 'text-[var(--accent)]'
-                : metrics.equivalentNetPrimaryMinor < 0
-                  ? 'text-rose-600 dark:text-rose-400'
-                  : 'text-[var(--text-primary)]'
-            }`}
-          >
-            {metrics.equivalentNetPrimaryMinor > 0 ? '+' : ''}
-            {formatMoney(metrics.equivalentNetPrimaryMinor, primaryCur, profile.locale)}
+      {/* Compact 1-Line Financial Summary Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span>
+            <span className="text-[var(--text-muted)]">{t('debts.owedToMe')}: </span>
+            <strong className="font-numeric text-emerald-600 dark:text-emerald-400">
+              {formatMoney(metrics.equivalentOwedToMePrimaryMinor, primaryCur, profile.locale)}
+            </strong>
           </span>
           <span className="text-[var(--text-muted)]">·</span>
-          <span className="font-numeric text-[var(--text-muted)]">
-            {t('debts.openSettledSummary', {
-              open: metrics.totalOpenCount,
-              settled: metrics.totalSettledCount,
-            })}
+          <span>
+            <span className="text-[var(--text-muted)]">{t('debts.iOwe')}: </span>
+            <strong className="font-numeric text-rose-600 dark:text-rose-400">
+              {formatMoney(metrics.equivalentIOwePrimaryMinor, primaryCur, profile.locale)}
+            </strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('debts.netPosition')}: </span>
+            <strong
+              className={`font-numeric ${
+                metrics.equivalentNetPrimaryMinor > 0
+                  ? 'text-[var(--accent)]'
+                  : metrics.equivalentNetPrimaryMinor < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-[var(--text-primary)]'
+              }`}
+            >
+              {metrics.equivalentNetPrimaryMinor > 0 ? '+' : ''}
+              {formatMoney(metrics.equivalentNetPrimaryMinor, primaryCur, profile.locale)}
+            </strong>
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <span className="font-numeric text-[var(--text-muted)]">
+            {metrics.totalOpenCount} open
+          </span>
           {metrics.totalOverdueCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-2.5 py-0.5 font-numeric font-semibold text-red-600 dark:text-red-400">
               {metrics.totalOverdueCount} {t('debts.statusOverdue')}
             </span>
           )}
-          <button
-            type="button"
-            onClick={() => setFxEditorOpen((v) => !v)}
-            className="inline-flex items-center gap-1 font-medium text-[var(--accent)] hover:underline"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>{t('debts.fxRatesBtn')}</span>
-          </button>
         </div>
       </div>
 
@@ -311,7 +289,7 @@ export const DebtsView: React.FC = () => {
         </form>
       )}
 
-      {/* Segmented View Tabs + CSV Export */}
+      {/* Segmented View Tabs (Ledger / People) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div
           role="tablist"
@@ -322,8 +300,6 @@ export const DebtsView: React.FC = () => {
             [
               { id: 'ledger', label: t('debts.tabLedger') },
               { id: 'people', label: t('debts.tabPeople') },
-              { id: 'planner', label: t('debts.tabPlanner') },
-              { id: 'forecast', label: t('debts.tabForecast') },
             ] as const
           ).map((tab) => (
             <button
@@ -342,17 +318,6 @@ export const DebtsView: React.FC = () => {
             </button>
           ))}
         </div>
-
-        {debts.length > 0 && (
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] whitespace-nowrap"
-          >
-            <Download className="h-3.5 w-3.5" />
-            <span>{t('debts.exportCsv')}</span>
-          </button>
-        )}
       </div>
 
       {/* Sub-view Content */}
@@ -366,18 +331,6 @@ export const DebtsView: React.FC = () => {
             setDirectionFilter('all');
             setSubTab('ledger');
           }}
-        />
-      ) : subTab === 'planner' ? (
-        <PayoffPlannerPanel
-          debts={debts}
-          primaryCurrency={profile.primaryCurrency}
-          fxRates={fxRates}
-        />
-      ) : subTab === 'forecast' ? (
-        <CashFlowForecastPanel
-          debts={debts}
-          primaryCurrency={profile.primaryCurrency}
-          fxRates={fxRates}
         />
       ) : (
         <div className="space-y-4">

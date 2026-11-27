@@ -27,6 +27,7 @@ import { useReminders } from '../../../hooks/useReminders';
 import { useUIStore } from '../../../state/useUIStore';
 import { TaskFormModal } from './TaskFormModal';
 import { UnifiedCalendarPanel } from './UnifiedCalendarPanel';
+import { MoreActionsMenu } from '../../../components/MoreActionsMenu';
 
 type PlannerTab = 'tasks' | 'calendar';
 type StatusFilter = 'active' | 'todo' | 'in_progress' | 'done' | 'all';
@@ -146,20 +147,23 @@ export const PlannerView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => {
-              setEditingTask(null);
-              setFormDefaultDate('');
-              setFormFocusAi(true);
-              setFormOpen(true);
-            }}
-            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs sm:text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-subtle)] transition-colors whitespace-nowrap"
-          >
-            <Sparkles className="h-4 w-4 text-[var(--accent)]" />
-            <span>{t('planner.aiGoalBreakdown')}</span>
-          </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <MoreActionsMenu
+            items={[
+              {
+                id: 'ai_goal',
+                label: t('planner.aiGoalBreakdown'),
+                icon: Sparkles,
+                tone: 'accent',
+                onClick: () => {
+                  setEditingTask(null);
+                  setFormDefaultDate('');
+                  setFormFocusAi(true);
+                  setFormOpen(true);
+                },
+              },
+            ]}
+          />
 
           <button
             type="button"
@@ -177,51 +181,30 @@ export const PlannerView: React.FC = () => {
         </div>
       </section>
 
-      {/* Sky Focus Summary Banner (Distinct Planner Identity) */}
-      <section
-        aria-label="Planner metrics"
-        className="rounded-2xl border border-sky-500/25 bg-gradient-to-r from-sky-500/8 via-[var(--bg-surface)] to-[var(--bg-surface)] p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4"
-      >
-        <div className="flex flex-wrap items-center gap-6 sm:gap-8">
-          <div>
-            <div className="text-xs font-semibold text-sky-700 dark:text-sky-400">{t('planner.kpiDueToday')}</div>
-            <div className="mt-1 font-numeric text-2xl font-bold text-[var(--text-primary)]">
-              {summary.dueTodayCount}
-            </div>
-          </div>
-          <div className="h-8 w-px bg-[var(--border-hairline)] hidden sm:block" />
-          <div>
-            <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiActive')}</div>
-            <div className="mt-1 font-numeric text-xl font-semibold text-[var(--text-primary)]">
-              {summary.activeCount}
-            </div>
-          </div>
-          <div className="h-8 w-px bg-[var(--border-hairline)] hidden sm:block" />
-          <div>
-            <div className="text-xs font-medium text-[var(--text-muted)]">{t('planner.kpiCompleted')}</div>
-            <div className="mt-1 font-numeric text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-              {summary.completedCount} <span className="text-xs font-normal text-[var(--text-muted)]">/ {summary.totalCount}</span>
-            </div>
-          </div>
+      {/* Compact 1-Line Planner Summary Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] px-4 py-3 text-xs">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+          <span>
+            <span className="text-[var(--text-muted)]">{t('planner.kpiDueToday')}: </span>
+            <strong className="font-numeric text-[var(--accent)]">{summary.dueTodayCount}</strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('planner.kpiActive')}: </span>
+            <strong className="font-numeric text-[var(--text-primary)]">{summary.activeCount}</strong>
+          </span>
+          <span className="text-[var(--text-muted)]">·</span>
+          <span>
+            <span className="text-[var(--text-muted)]">{t('planner.kpiCompleted')}: </span>
+            <strong className="font-numeric text-emerald-600 dark:text-emerald-400">
+              {summary.completedCount}/{summary.totalCount}
+            </strong>
+          </span>
         </div>
-
-        <div className="w-full sm:w-44 space-y-1.5">
-          <div className="flex items-center justify-between text-[11px] font-medium text-[var(--text-muted)]">
-            <span>Progress</span>
-            <span className="font-numeric">
-              {summary.totalCount > 0 ? Math.round((summary.completedCount / summary.totalCount) * 100) : 0}%
-            </span>
-          </div>
-          <div className="h-2 w-full rounded-full bg-[var(--bg-subtle)] overflow-hidden">
-            <div
-              className="h-full rounded-full bg-sky-500 transition-all duration-300"
-              style={{
-                width: `${summary.totalCount > 0 ? Math.round((summary.completedCount / summary.totalCount) * 100) : 0}%`,
-              }}
-            />
-          </div>
-        </div>
-      </section>
+        <span className="font-numeric text-[var(--text-muted)]">
+          {summary.totalCount > 0 ? Math.round((summary.completedCount / summary.totalCount) * 100) : 0}% done
+        </span>
+      </div>
 
       {/* View Switcher */}
       <div className="flex flex-wrap items-center justify-between gap-3">

@@ -78,6 +78,22 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rolldownOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (id.includes('firebase')) return 'vendor-firebase';
+            if (id.includes('lucide-react')) return 'vendor-icons';
+            if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';
+            if (id.includes('lottie-web')) return 'vendor-lottie';
+            if (id.includes('react-dom') || id.includes('/react/') || id.includes('i18next')) {
+              return 'vendor-react';
+            }
+          },
+        },
+      },
+    },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},

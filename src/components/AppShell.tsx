@@ -14,6 +14,7 @@ import {
   Lock,
   LogIn,
   LogOut,
+  Pin,
   QrCode,
   Settings,
   Sparkles,
@@ -51,7 +52,22 @@ export const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'settings', labelKey: 'nav.settings', icon: Settings },
 ];
 
-const MOBILE_PRIMARY_TABS: NavRoute[] = ['home', 'debts', 'reminders', 'vault'];
+const DEFAULT_MOBILE_TABS: NavRoute[] = ['home', 'debts', 'reminders', 'vault'];
+const MOBILE_TABS_KEY = 'lifeos_mobile_tabs';
+
+function loadMobileTabs(): NavRoute[] {
+  try {
+    const raw = localStorage.getItem(MOBILE_TABS_KEY);
+    if (!raw) return DEFAULT_MOBILE_TABS;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return DEFAULT_MOBILE_TABS;
+    const validIds = new Set(ALL_NAV_ITEMS.map((i) => i.id));
+    const filtered = parsed.filter((id): id is NavRoute => typeof id === 'string' && validIds.has(id as NavRoute));
+    return filtered.length === 4 ? filtered : DEFAULT_MOBILE_TABS;
+  } catch {
+    return DEFAULT_MOBILE_TABS;
+  }
+}
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation();
@@ -94,6 +110,28 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   // ── Swipe-to-Dismiss for Mobile Bottom Drawer ──
   const [shortcutsHelpOpen, setShortcutsHelpOpen] = useState(false);
+  const [mobileTabs, setMobileTabs] = useState<NavRoute[]>(loadMobileTabs);
+  const [editingMobileTabs, setEditingMobileTabs] = useState(false);
+  const toggleMobilePin = (id: NavRoute) => {
+    setMobileTabs((prev) => {
+      let next: NavRoute[];
+      if (prev.includes(id)) {
+        if (prev.length <= 1) return prev;
+        next = prev.filter((tId) => tId !== id);
+        // Keep 4 slots filled by pulling first unpinned item if removed
+        const fallback = ALL_NAV_ITEMS.find((i) => !next.includes(i.id))?.id;
+        if (fallback) next = [...next, fallback];
+      } else {
+        next = [...prev.slice(0, 3), id];
+      }
+      try {
+        localStorage.setItem(MOBILE_TABS_KEY, JSON.stringify(next));
+      } catch {
+        // Ignore
+      }
+      return next;
+    });
+  };
   const [drawerDragY, setDrawerDragY] = useState(0);
   const drawerTouchStartY = useRef<number | null>(null);
 
@@ -548,7 +586,7 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         className="mobile-bottom-nav lg:hidden fixed bottom-0 inset-x-0 z-40 pb-safe border-t border-[var(--border-hairline)] bg-[var(--bg-surface)]/95 backdrop-blur-md"
       >
         <div className="h-[56px] grid grid-cols-5 items-center px-1">
-        {MOBILE_PRIMARY_TABS.map((tabId) => {
+        {mobileTabs.map((tabId) => {
           const item = ALL_NAV_ITEMS.find((i) => i.id === tabId)!;
           const Icon = item.icon;
           const isActive = activeRoute === tabId;
@@ -586,14 +624,14 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
             setMobileMoreOpen(true);
           }}
           className={`min-h-[48px] flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors btn-spring ${
-            mobileMoreOpen || (!MOBILE_PRIMARY_TABS.includes(activeRoute))
+            mobileMoreOpen || (!mobileTabs.includes(activeRoute))
               ? 'text-[var(--accent)] font-semibold'
               : 'text-[var(--text-muted)]'
           }`}
         >
           <span
             className={`inline-flex items-center justify-center rounded-full px-3.5 py-1 transition-colors ${
-              mobileMoreOpen || (!MOBILE_PRIMARY_TABS.includes(activeRoute))
+              mobileMoreOpen || (!mobileTabs.includes(activeRoute))
                 ? 'bg-[var(--accent-soft)]'
                 : ''
             }`}
@@ -667,27 +705,49 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
             {/* All 9 Modules in a Clean 3x3 Grid */}
             <div>
-              <div className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2 px-1">
-                {t('home.modulesTitle')}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  {editingMobileTabs ? 'Tap 4 tabs to pin to bottom bar' : t('home.modulesTitle')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEditingMobileTabs((v) => !v)}
+                  className="text-[11px] font-medium text-[var(--accent)] hover:underline"
+                >
+                  {editingMobileTabs ? 'Done' : 'Customize bar'}
+                </button>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {ALL_NAV_ITEMS.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeRoute === item.id;
+                  const isPinned = mobileTabs.includes(item.id);
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => {
-                        setActiveRoute(item.id);
-                        setMobileMoreOpen(false);
+                        if (editingMobileTabs) {
+                          void hapticLight();
+                          toggleMobilePin(item.id);
+                        } else {
+                          setActiveRoute(item.id);
+                          setMobileMoreOpen(false);
+                        }
                       }}
-                      className={`min-h-[68px] flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-2.5 text-center transition-colors btn-spring ${
-                        isActive
-                          ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-xs'
-                          : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]'
+                      className={`relative min-h-[68px] flex flex-col items-center justify-center gap-1.5 rounded-2xl border p-2.5 text-center transition-colors btn-spring ${
+                        editingMobileTabs
+                          ? isPinned
+                            ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]'
+                            : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-muted)]'
+                          : isActive
+                            ? 'border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] shadow-xs'
+                            : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]'
                       }`}
                     >
+                      {editingMobileTabs && isPinned && (
+                        <Pin className="absolute top-1.5 end-1.5 h-3 w-3 text-[var(--accent)]" />
+                      )}
                       <Icon className="h-5 w-5 shrink-0" />
                       <span className="text-xs font-medium truncate w-full">{t(item.labelKey)}</span>
                     </button>

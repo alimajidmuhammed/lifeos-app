@@ -77,6 +77,7 @@ export const SettingsView: React.FC = () => {
   const addActiveCurrency = useUIStore((s) => s.addActiveCurrency);
   const removeActiveCurrency = useUIStore((s) => s.removeActiveCurrency);
   const [currencyToAdd, setCurrencyToAdd] = useState('');
+  const [settingsTab, setSettingsTab] = useState<'general' | 'security' | 'ai_about'>('general');
 
   // Display name state
   const [displayNameInput, setDisplayNameInput] = useState(
@@ -239,7 +240,7 @@ export const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
           {t('settings.title')}
@@ -249,7 +250,32 @@ export const SettingsView: React.FC = () => {
         </p>
       </div>
 
+      {/* Clean Settings Category Tabs */}
+      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-1 w-fit">
+        {(
+          [
+            { id: 'general', label: 'General' },
+            { id: 'security', label: 'Security & Backup' },
+            { id: 'ai_about', label: 'AI & About' },
+          ] as const
+        ).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setSettingsTab(tab.id)}
+            className={`min-h-[34px] rounded-lg px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              settingsTab === tab.id
+                ? 'bg-[var(--accent)] text-white'
+                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       {/* 1. Theme & Language (RTL) */}
+      {settingsTab === 'general' && (
       <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] divide-y divide-[var(--border-hairline)]">
         <div className="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -520,8 +546,10 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* 2. AI Privacy Gate & Module Toggles */}
+      {settingsTab === 'ai_about' && (
       <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -587,8 +615,10 @@ export const SettingsView: React.FC = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* 3. Device PIN Lock & Opt-In AES-256-GCM E2E Encryption */}
+      {settingsTab === 'security' && (
       <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] divide-y divide-[var(--border-hairline)]">
         {/* PIN Lock */}
         <div className="p-6 space-y-4">
@@ -773,8 +803,10 @@ export const SettingsView: React.FC = () => {
           )}
         </div>
       </section>
+      )}
 
       {/* 4. About & Legal */}
+      {settingsTab === 'ai_about' && (
       <section className="rounded-2xl border border-[var(--border-hairline)] bg-[var(--bg-surface)] p-6 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-[var(--text-primary)]">
@@ -801,6 +833,7 @@ export const SettingsView: React.FC = () => {
           </button>
         </div>
       </section>
+      )}
 
       {legalModal && (
         <ModalPortal onClose={() => setLegalModal(null)}>

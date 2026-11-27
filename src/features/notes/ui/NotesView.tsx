@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ModalPortal } from '../../../components/ModalPortal';
+import { MoreActionsMenu } from '../../../components/MoreActionsMenu';
 import {
   requestNoteAssist,
   type NoteAiMode,
@@ -707,51 +708,6 @@ export const NotesView: React.FC = () => {
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     type="button"
-                    aria-label={selectedNote.pinned ? 'Unpin note' : 'Pin note'}
-                    onClick={() => void togglePin(selectedNote)}
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-hairline)] ${
-                      selectedNote.pinned
-                        ? 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]'
-                        : 'bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                    }`}
-                  >
-                    <Pin className="h-3.5 w-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label={selectedNote.isEncrypted ? 'Decrypt or unlock note' : 'Encrypt and lock note'}
-                    onClick={() => void handleToggleNoteLock()}
-                    className={`inline-flex h-8 px-2.5 items-center gap-1 rounded-lg border text-xs font-medium whitespace-nowrap ${
-                      selectedNote.isEncrypted
-                        ? 'border-amber-500/40 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300'
-                        : 'border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]'
-                    }`}
-                  >
-                    {selectedNote.isEncrypted ? (
-                      <>
-                        <Unlock className="h-3.5 w-3.5" />
-                        <span>E2E Locked</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-3.5 w-3.5" />
-                        <span>Lock E2E</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-label="Version history"
-                    onClick={() => void handleOpenVersions()}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)]"
-                  >
-                    <History className="h-3.5 w-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
                     disabled={saving || !dirty || isSelectedNoteSealed}
                     onClick={() => void handleSaveNote()}
                     className="inline-flex h-8 px-3 items-center gap-1 rounded-lg bg-[var(--accent)] text-xs font-medium text-white hover:bg-[var(--accent-hover)] disabled:opacity-45 whitespace-nowrap"
@@ -760,14 +716,35 @@ export const NotesView: React.FC = () => {
                     <span>{saving ? '...' : 'Save'}</span>
                   </button>
 
-                  <button
-                    type="button"
-                    aria-label="Delete note"
-                    onClick={() => void handleDeleteNoteWithUndo(selectedNote)}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--border-hairline)] bg-[var(--bg-canvas)] text-[var(--text-muted)] hover:text-red-600 dark:hover:text-red-400"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <MoreActionsMenu
+                    items={[
+                      {
+                        id: 'pin',
+                        label: selectedNote.pinned ? 'Unpin Note' : 'Pin Note',
+                        icon: Pin,
+                        onClick: () => void togglePin(selectedNote),
+                      },
+                      {
+                        id: 'lock',
+                        label: selectedNote.isEncrypted ? 'Unlock / Decrypt E2E' : 'Lock with E2E',
+                        icon: selectedNote.isEncrypted ? Unlock : Lock,
+                        onClick: () => void handleToggleNoteLock(),
+                      },
+                      {
+                        id: 'versions',
+                        label: 'Version History',
+                        icon: History,
+                        onClick: () => void handleOpenVersions(),
+                      },
+                      {
+                        id: 'delete',
+                        label: 'Delete Note',
+                        icon: Trash2,
+                        tone: 'warn',
+                        onClick: () => void handleDeleteNoteWithUndo(selectedNote),
+                      },
+                    ]}
+                  />
                 </div>
               </div>
 
